@@ -176,6 +176,7 @@ const fn identifier_table() -> [bool; 256] {
     table[b'7' as usize] = true;
     table[b'8' as usize] = true;
     table[b'9' as usize] = true;
+    table[b':' as usize] = true;
     table
 }
 const fn alphabet_table() -> [bool; 256] {

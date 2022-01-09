@@ -20,7 +20,7 @@ pub const STRING_LITTERAL_CONTENT_RANGES: &[u8; 16] = &[
 ];
 
 pub const IDENTIFIER_RANGES: &[u8; 16] = &[
-    b'\x00', b'\x2d', b'\x2f', b'\x2f', b':', b'@', b'[', b'^', b'`', b'`', b'{', b'\xff', b'\x00',
+    b'\x00', b'\x2d', b'\x2f', b'\x2f', b';', b'@', b'[', b'^', b'`', b'`', b'{', b'\xff', b'\x00',
     b'\x00', b'\x00', b'\x00',
 ];
 

@@ -76,8 +76,8 @@ mod tests {
         use super::*;
 
         #[test]
-        fn identifire__alphanumeric_with_underscore__accepted() {
-            let text = "alpha_numeric1234567890";
+        fn identifire__alphanumeric_with_underscore_and_colon__accepted() {
+            let text = "alpha_:numeric1234567890";
             let (remainder, parse_output) = identifier(text).unwrap();
             assert_eq!(parse_output, Val::Identifier(text));
             assert!(remainder.is_empty());
