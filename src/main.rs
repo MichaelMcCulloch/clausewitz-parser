@@ -1,6 +1,6 @@
 use std::{fs::File, os::unix::prelude::MetadataExt, time::Instant};
 
-use clausewitz_parser::root;
+use clausewitz_parser::{par_root, root};
 use memmap::Mmap;
 
 fn main() {
@@ -10,9 +10,11 @@ fn main() {
     let mmap = unsafe { Mmap::map(&file).expect(&format!("Error mapping file {:?}", file)) };
 
     let str = std::str::from_utf8(&mmap[..]).unwrap();
+    let replace = str.replace("\n}\n", "\n}\n#");
 
     let start = Instant::now();
-    let _result = root(str);
+
+    let _result = par_root(replace.as_str());
 
     let end = start.elapsed();
 
