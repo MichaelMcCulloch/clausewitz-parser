@@ -15,8 +15,8 @@ pub const NOT_TOKEN_RANGES: &[u8; 16] = &[
     b'\x00', b'\x00', b'\x00', b'\x00',
 ];
 pub const STRING_LITTERAL_CONTENT_RANGES: &[u8; 16] = &[
-    b'\x00', b'\x08', b'\x0e', b'\x1f', b'"', b'"', b'=', b'=', b'{', b'{', b'}', b'}', b'\x7f',
-    b'\xff', b'\x00', b'\x00',
+    b'"', b'"', b'\x00', b'\x00', b'\x00', b'\x00', b'\x00', b'\x00', b'\x00', b'\x00', b'\x00',
+    b'\x00', b'\x00', b'\x00', b'\x00', b'\x00',
 ];
 
 pub const IDENTIFIER_RANGES: &[u8; 16] = &[

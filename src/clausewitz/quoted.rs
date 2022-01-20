@@ -51,7 +51,7 @@ pub fn map_to_date<'a>(s: &'a str) -> anyhow::Result<NaiveDate> {
     let month = parts
         .get(1)
         .ok_or(DateParseError {
-        err: String::from("Too Short"),
+            err: String::from("Too Short"),
         })?
         .parse()?;
     let day = parts
@@ -151,23 +151,20 @@ mod tests {
             let (_remainder, parse_output) = string_literal(text).unwrap();
             assert_eq!(parse_output, Val::StringLiteral(text));
         }
+        #[test]
+        fn string_literal__accent__accepted() {
+            let text = "Rivén's Burrow";
+            let (_remainder, parse_output) = string_literal(text).unwrap();
+            assert_eq!(parse_output, Val::StringLiteral(text));
+        }
 
         #[test]
         fn string_literal__decimal_separated_yyyy_mm_string_litteral__accepted() {
             let (remainder_quote, result_quote) = string_literal("\"").unwrap();
-            let (remainder_eq, result_eq) = string_literal("=").unwrap();
-            let (remainder_lbracket, result_lbracket) = string_literal("{").unwrap();
-            let (remainder_rbracket, result_rbracket) = string_literal("}").unwrap();
 
             assert_eq!(result_quote, Val::StringLiteral(""));
-            assert_eq!(result_eq, Val::StringLiteral(""));
-            assert_eq!(result_lbracket, Val::StringLiteral(""));
-            assert_eq!(result_rbracket, Val::StringLiteral(""));
 
             assert_eq!(remainder_quote, "\"");
-            assert_eq!(remainder_eq, "=");
-            assert_eq!(remainder_lbracket, "{");
-            assert_eq!(remainder_rbracket, "}");
         }
     }
 }
