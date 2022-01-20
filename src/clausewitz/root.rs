@@ -198,7 +198,6 @@ dict2={
 
         let result = par_root(prepared_input.as_str());
 
-        println!("{}", result.clone().unwrap().1);
         assert_result_ok(result);
     }
 }
