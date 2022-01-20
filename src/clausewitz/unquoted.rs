@@ -57,7 +57,7 @@ pub fn identifier<'a>(input: &'a str) -> Res<&'a str, Val<'a>> {
 use nom::branch::alt;
 
 pub fn unquoted<'a>(input: &'a str) -> Res<&'a str, Val<'a>> {
-    alt((decimal, integer, identifier))(input)
+    alt((date, decimal, integer, identifier))(input)
 }
 
 #[cfg(test)]
