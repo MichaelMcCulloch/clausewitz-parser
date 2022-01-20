@@ -105,7 +105,7 @@ mod tests {
         }
 
         #[test]
-        fn identifire__begins_with_number__rejectec() {
+        fn identifire__begins_with_number__rejected() {
             let text = "0alpha_numeric1234567890";
             assert!(identifier(text).is_err());
         }
