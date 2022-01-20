@@ -1,3 +1,4 @@
+use chrono::NaiveDate;
 use nom::{
     character::complete::{char, digit1},
     combinator::{map, map_res, opt, recognize, verify},
@@ -6,10 +7,21 @@ use nom::{
 };
 
 use super::{
+    quoted::map_to_date,
     simd::{take_while_simd, IDENTIFIER_RANGES},
     tables::{is_digit, is_identifier_char},
     Res, Val,
 };
+
+pub fn date<'a>(input: &'a str) -> Res<&'a str, Val<'a>> {
+    map(
+        map_res(
+            recognize(tuple((digit1, char('.'), digit1, char('.'), digit1))),
+            map_to_date,
+        ),
+        |date: NaiveDate| Val::Date(date),
+    )(input)
+}
 pub fn decimal<'a>(input: &'a str) -> Res<&'a str, Val<'a>> {
     map(
         map_res(
@@ -50,6 +62,9 @@ pub fn unquoted<'a>(input: &'a str) -> Res<&'a str, Val<'a>> {
 
 #[cfg(test)]
 mod tests {
+
+    use chrono::{Date, Month, NaiveDate};
+
     use super::*;
     #[test]
     fn unquoted__integer__integer() {
@@ -68,6 +83,12 @@ mod tests {
         let text = "zer0";
         let (_remainder, parse_output) = unquoted(text).unwrap();
         assert_eq!(parse_output, Val::Identifier("zer0"));
+    }
+    #[test]
+    fn unquoted__date__identifier() {
+        let text = "2200.02.02";
+        let (_remainder, parse_output) = unquoted(text).unwrap();
+        assert_eq!(parse_output, Val::Date(NaiveDate::from_ymd(2200, 2, 2)));
     }
 
     #[cfg(test)]

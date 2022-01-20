@@ -3,6 +3,7 @@ use super::{
     tables::is_string_litteral_contents,
     Res, Val,
 };
+use chrono::NaiveDate;
 use nom::{
     branch::alt,
     character::complete::{char, digit1},
@@ -14,7 +15,6 @@ use std::{
     error::Error,
     fmt::{self, Debug, Display, Formatter},
 };
-use time::{Date, Month};
 
 #[derive(Debug, PartialEq)]
 pub struct DateParseError {
@@ -35,45 +35,37 @@ pub fn date<'a>(input: &'a str) -> Res<&'a str, Val<'a>> {
             recognize(tuple((digit1, char('.'), digit1, char('.'), digit1))),
             map_to_date,
         ),
-        |date: Date| Val::Date(date),
+        |date: NaiveDate| Val::Date(date),
     )(input)
 }
 
-pub fn map_to_date<'a>(s: &'a str) -> anyhow::Result<Date> {
+pub fn map_to_date<'a>(s: &'a str) -> anyhow::Result<NaiveDate> {
     let parts: Vec<&'a str> = s.split(".").collect();
 
-    let year: i32 = parts
+    let year = parts
         .get(0)
         .ok_or(DateParseError {
             err: String::from("Too Short"),
         })?
         .parse()?;
-    let month = match *parts.get(1).ok_or(DateParseError {
+    let month = parts
+        .get(1)
+        .ok_or(DateParseError {
         err: String::from("Too Short"),
-    })? {
-        "01" => Ok(Month::January),
-        "02" => Ok(Month::February),
-        "03" => Ok(Month::March),
-        "04" => Ok(Month::April),
-        "05" => Ok(Month::May),
-        "06" => Ok(Month::June),
-        "07" => Ok(Month::July),
-        "08" => Ok(Month::August),
-        "09" => Ok(Month::September),
-        "10" => Ok(Month::October),
-        "11" => Ok(Month::November),
-        "12" => Ok(Month::December),
-        _ => Err(DateParseError {
-            err: String::from("Months beyond December are not supported, dummy!"),
-        }),
-    };
-    let day: u8 = parts
+        })?
+        .parse()?;
+    let day = parts
         .get(2)
         .ok_or(DateParseError {
             err: String::from("Too Short"),
         })?
         .parse()?;
-    Ok(Date::from_calendar_date(year, month?, day)?)
+
+    //TODO: if the date really matters, find a way to allow leap years, ie feb 29th
+    Ok(match NaiveDate::from_ymd_opt(year, month, day) {
+        Some(date) => date,
+        None => NaiveDate::from_ymd(0, 1, 1),
+    })
 }
 
 pub fn string_literal_contents<'a>(input: &'a str) -> Res<&'a str, &'a str> {
@@ -94,16 +86,12 @@ pub fn quoted<'a>(input: &'a str) -> Res<&'a str, Val<'a>> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use time::{Date, Month};
 
     #[test]
     fn quoted__date__date() {
         let text = "\"2200.01.01\"";
         let (_remainder, parse_output) = quoted(text).unwrap();
-        assert_eq!(
-            parse_output,
-            Val::Date(Date::from_calendar_date(2200, Month::January, 01).unwrap())
-        );
+        assert_eq!(parse_output, Val::Date(NaiveDate::from_ymd(2200, 1, 1)));
     }
 
     #[test]
@@ -115,57 +103,41 @@ mod tests {
 
     #[cfg(test)]
     mod date_test {
-        use time::Month;
 
         use super::*;
         #[test]
         fn date__decimal_separated_yyyy_mm_date__accepted() {
             let text = "2200.01.01";
             let (_remainder, parse_output) = date(text).unwrap();
-            assert_eq!(
-                parse_output,
-                Val::Date(Date::from_calendar_date(2200, Month::January, 01).unwrap())
-            );
+            assert_eq!(parse_output, Val::Date(NaiveDate::from_ymd(2200, 1, 01)));
         }
 
         #[test]
         fn date__4digit_year__accepted() {
             let text = "2200.01.01";
             let (_remainder, parse_output) = date(text).unwrap();
-            assert_eq!(
-                parse_output,
-                Val::Date(Date::from_calendar_date(2200, Month::January, 01).unwrap())
-            );
+            assert_eq!(parse_output, Val::Date(NaiveDate::from_ymd(2200, 1, 01)));
         }
 
         #[test]
         fn date__3digit_year__accepted() {
             let text = "200.01.01";
             let (_remainder, parse_output) = date(text).unwrap();
-            assert_eq!(
-                parse_output,
-                Val::Date(Date::from_calendar_date(200, Month::January, 01).unwrap())
-            );
+            assert_eq!(parse_output, Val::Date(NaiveDate::from_ymd(200, 1, 01)));
         }
 
         #[test]
         fn date__2digit_year__accepted() {
             let text = "20.01.01";
             let (_remainder, parse_output) = date(text).unwrap();
-            assert_eq!(
-                parse_output,
-                Val::Date(Date::from_calendar_date(20, Month::January, 01).unwrap())
-            );
+            assert_eq!(parse_output, Val::Date(NaiveDate::from_ymd(20, 1, 01)));
         }
 
         #[test]
         fn date__1digit_year__accepted() {
             let text = "2.01.01";
             let (_remainder, parse_output) = date(text).unwrap();
-            assert_eq!(
-                parse_output,
-                Val::Date(Date::from_calendar_date(2, Month::January, 01).unwrap())
-            );
+            assert_eq!(parse_output, Val::Date(NaiveDate::from_ymd(2, 1, 01)));
         }
     }
 

@@ -1,7 +1,7 @@
 use std::fmt::Display;
 
+use chrono::NaiveDate;
 use nom::{error::VerboseError, IResult};
-use time::Date;
 
 #[cfg(test)]
 pub(self) mod tests;
@@ -29,7 +29,7 @@ pub enum Val<'a> {
     Array(Vec<Val<'a>>),
     Set(Vec<Val<'a>>),
     StringLiteral(&'a str),
-    Date(Date),
+    Date(NaiveDate),
     Decimal(f64),
     Integer(i64),
     Identifier(&'a str),

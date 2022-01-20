@@ -2,10 +2,9 @@
 mod test {
     use std::fs::{self, File};
 
+    use chrono::NaiveDate;
     use clausewitz_parser::{root, Val};
     use memmap::Mmap;
-
-    use time::{Date, Month};
 
     #[test]
     fn meta() {
@@ -63,10 +62,7 @@ mod test {
 
     #[test]
     fn format_date() {
-        println!(
-            "{}",
-            Val::Date(Date::from_calendar_date(2021, Month::January, 1).unwrap())
-        );
+        println!("{}", Val::Date(NaiveDate::from_ymd(2021, 1, 1)));
     }
 
     #[test]
