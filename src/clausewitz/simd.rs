@@ -32,7 +32,7 @@ use super::Res;
 
 pub fn take_while_simd<'a, Condition, Error: ParseError<&'a str>>(
     cond: Condition,
-    ranges: &'static [u8; 16],
+    ranges: &'static [u8; CHUNK_SIZE],
 ) -> impl Fn(&'a str) -> Res<&'a str, &'a str>
 where
     Condition: Fn(char) -> bool,
@@ -41,7 +41,7 @@ where
         let condition = |c| cond(c);
         if input.len() == 0 {
             return Ok(("", ""));
-        } else if input.len() >= 16 {
+        } else if input.len() >= CHUNK_SIZE {
             simd_loop16(input, ranges)
         } else {
             take_while(condition)(input)
@@ -49,7 +49,7 @@ where
     }
 }
 
-fn simd_loop16<'a>(str: &'a str, ranges: &[u8; 16]) -> Res<&'a str, &'a str> {
+fn simd_loop16<'a>(str: &'a str, ranges: &[u8; CHUNK_SIZE]) -> Res<&'a str, &'a str> {
     let start = str.as_ptr() as usize;
     let mut i = str.as_ptr() as usize;
     let ranges16 = unsafe { _mm_loadu_si128(ranges.as_ptr() as *const _) };
@@ -60,18 +60,18 @@ fn simd_loop16<'a>(str: &'a str, ranges: &[u8; 16]) -> Res<&'a str, &'a str> {
         let idx = unsafe {
             _mm_cmpestri(
                 ranges16,
-                16,
+                CHUNK_SIZE as i32,
                 s1,
-                16,
+                CHUNK_SIZE as i32,
                 _SIDD_LEAST_SIGNIFICANT | _SIDD_CMP_RANGES | _SIDD_UBYTE_OPS,
             )
         };
 
-        if idx != 16 {
+        if idx != CHUNK_SIZE as i32 {
             i += idx as usize;
             break;
         }
-        i += 16;
+        i += CHUNK_SIZE;
     }
     let index = i - start;
     let (before, after) = str.split_at(min(index, str.len()));

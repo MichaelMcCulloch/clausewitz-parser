@@ -67,10 +67,6 @@ fn format_val(val: &Val, tabs: &str) -> String {
     }
 }
 
-fn format_key_value(key: &str, val: &Val, tabs: &str) -> String {
-    format!("{}{} = {}", tabs, key, format_val(&val, ""))
-}
-
 fn format_dict(val: &Val, tabs: &str) -> String {
     match val {
         Val::Dict(dict_entries) => {
@@ -205,5 +201,86 @@ fn format_identifier(val: &Val, tabs: &str) -> String {
             format!("{}{}", tabs, identifire)
         }
         _ => panic!("whoops"),
+    }
+}
+
+#[cfg(test)]
+mod format_tests {
+    use chrono::NaiveDate;
+
+    use crate::Val;
+
+    #[test]
+    fn format_integer() {
+        let _str = format!("{}", Val::Integer(0));
+    }
+
+    #[test]
+    fn format_decimal() {
+        let _str = format!("{}", Val::Decimal(0.0));
+    }
+
+    #[test]
+    fn format_identifier() {
+        let _str = format!("{}", Val::Identifier("identifier"));
+    }
+
+    #[test]
+    fn format_string_literal() {
+        let _str = format!("{}", Val::StringLiteral("String Litteral"));
+    }
+
+    #[test]
+    fn format_date() {
+        let _str = format!("{}", Val::Date(NaiveDate::from_ymd(2021, 1, 1)));
+    }
+
+    #[test]
+    fn format_set() {
+        let _str = format!(
+            "{}",
+            Val::Set(vec![Val::Integer(0), Val::Set(vec![Val::Integer(0)])])
+        );
+    }
+
+    #[test]
+    fn format_dict() {
+        let _str = format!(
+            "{}",
+            Val::Dict(vec![
+                ("key", Val::Integer(0)),
+                ("dict", Val::Dict(vec![("key", Val::Integer(0))]))
+            ])
+        );
+    }
+
+    #[test]
+    fn format_dict2() {
+        let _str = format!("{}", Val::Dict(vec![("key", Val::Integer(0)),]));
+    }
+
+    #[test]
+    fn format_NumberedDict() {
+        let _str = format!(
+            "{}",
+            Val::NumberedDict(
+                0,
+                vec![
+                    ("key", Val::Integer(0)),
+                    (
+                        "NumberedDict",
+                        Val::NumberedDict(1, vec![("key", Val::Integer(0))])
+                    )
+                ]
+            )
+        );
+    }
+
+    #[test]
+    fn format_NumberedDict2() {
+        let _str = format!(
+            "{}",
+            Val::NumberedDict(-234, vec![("key", Val::Integer(0)),])
+        );
     }
 }
