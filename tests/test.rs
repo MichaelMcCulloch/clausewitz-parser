@@ -3,7 +3,7 @@ mod test {
     use std::fs::{self, File};
 
     use chrono::NaiveDate;
-    use clausewitz_parser::{root, Val};
+    use clausewitz_parser::{par_root, root, Val};
     use memmap::Mmap;
 
     #[test]
@@ -24,7 +24,7 @@ mod test {
     }
 
     #[test]
-    fn gamestate_memmap__for_epic_files() {
+    fn gamestate_memmap_par_root__for_epic_files() {
         let filename = "/home/michael/Dev/stellarust/res/test_data/campaign_raw/unitednationsofearth_-15512622/autosave_2200.02.01/gamestate";
         let file = File::open(filename).expect("File not found");
 
@@ -33,41 +33,38 @@ mod test {
         let str = std::str::from_utf8(&mmap[..]).unwrap();
         let prepared_input = str.replace("\n}\n", "\n}\n#");
 
-        let result = root(prepared_input.as_str());
+        let result = par_root(prepared_input.as_str());
 
-        // println!("{:#?}", result);
-        println!("{}", result.unwrap().1);
-
-        // assert!(result.is_ok());
+        assert!(result.is_ok());
     }
     #[test]
     fn format_integer() {
-        println!("{}", Val::Integer(0));
+        let str = format!("{}", Val::Integer(0));
     }
 
     #[test]
     fn format_decimal() {
-        println!("{}", Val::Decimal(0.0));
+        let str = format!("{}", Val::Decimal(0.0));
     }
 
     #[test]
     fn format_identifier() {
-        println!("{}", Val::Identifier("identifier"));
+        let str = format!("{}", Val::Identifier("identifier"));
     }
 
     #[test]
     fn format_string_literal() {
-        println!("{}", Val::StringLiteral("String Litteral"));
+        let str = format!("{}", Val::StringLiteral("String Litteral"));
     }
 
     #[test]
     fn format_date() {
-        println!("{}", Val::Date(NaiveDate::from_ymd(2021, 1, 1)));
+        let str = format!("{}", Val::Date(NaiveDate::from_ymd(2021, 1, 1)));
     }
 
     #[test]
     fn format_set() {
-        println!(
+        let str = format!(
             "{}",
             Val::Set(vec![Val::Integer(0), Val::Set(vec![Val::Integer(0)])])
         );
@@ -75,7 +72,7 @@ mod test {
 
     #[test]
     fn format_dict() {
-        println!(
+        let str = format!(
             "{}",
             Val::Dict(vec![
                 ("key", Val::Integer(0)),
@@ -86,12 +83,12 @@ mod test {
 
     #[test]
     fn format_dict2() {
-        println!("{}", Val::Dict(vec![("key", Val::Integer(0)),]));
+        let str = format!("{}", Val::Dict(vec![("key", Val::Integer(0)),]));
     }
 
     #[test]
     fn format_NumberedDict() {
-        println!(
+        let str = format!(
             "{}",
             Val::NumberedDict(
                 0,
@@ -108,7 +105,7 @@ mod test {
 
     #[test]
     fn format_NumberedDict2() {
-        println!(
+        let str = format!(
             "{}",
             Val::NumberedDict(-234, vec![("key", Val::Integer(0)),])
         );
