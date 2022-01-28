@@ -63,7 +63,7 @@ pub fn unquoted<'a>(input: &'a str) -> Res<&'a str, Val<'a>> {
 #[cfg(test)]
 mod tests {
 
-    use chrono::{Date, Month, NaiveDate};
+    use chrono::NaiveDate;
 
     use super::*;
     #[test]

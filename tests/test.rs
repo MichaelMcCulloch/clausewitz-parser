@@ -39,32 +39,32 @@ mod test {
     }
     #[test]
     fn format_integer() {
-        let str = format!("{}", Val::Integer(0));
+        let _str = format!("{}", Val::Integer(0));
     }
 
     #[test]
     fn format_decimal() {
-        let str = format!("{}", Val::Decimal(0.0));
+        let _str = format!("{}", Val::Decimal(0.0));
     }
 
     #[test]
     fn format_identifier() {
-        let str = format!("{}", Val::Identifier("identifier"));
+        let _str = format!("{}", Val::Identifier("identifier"));
     }
 
     #[test]
     fn format_string_literal() {
-        let str = format!("{}", Val::StringLiteral("String Litteral"));
+        let _str = format!("{}", Val::StringLiteral("String Litteral"));
     }
 
     #[test]
     fn format_date() {
-        let str = format!("{}", Val::Date(NaiveDate::from_ymd(2021, 1, 1)));
+        let _str = format!("{}", Val::Date(NaiveDate::from_ymd(2021, 1, 1)));
     }
 
     #[test]
     fn format_set() {
-        let str = format!(
+        let _str = format!(
             "{}",
             Val::Set(vec![Val::Integer(0), Val::Set(vec![Val::Integer(0)])])
         );
@@ -72,7 +72,7 @@ mod test {
 
     #[test]
     fn format_dict() {
-        let str = format!(
+        let _str = format!(
             "{}",
             Val::Dict(vec![
                 ("key", Val::Integer(0)),
@@ -83,12 +83,12 @@ mod test {
 
     #[test]
     fn format_dict2() {
-        let str = format!("{}", Val::Dict(vec![("key", Val::Integer(0)),]));
+        let _str = format!("{}", Val::Dict(vec![("key", Val::Integer(0)),]));
     }
 
     #[test]
     fn format_NumberedDict() {
-        let str = format!(
+        let _str = format!(
             "{}",
             Val::NumberedDict(
                 0,
@@ -105,7 +105,7 @@ mod test {
 
     #[test]
     fn format_NumberedDict2() {
-        let str = format!(
+        let _str = format!(
             "{}",
             Val::NumberedDict(-234, vec![("key", Val::Integer(0)),])
         );
