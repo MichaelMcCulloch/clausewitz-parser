@@ -49,7 +49,7 @@ mod tests {
 }
 "###;
         let prepared_input = text.replace("\n}\n", "\n}\n#");
-        let result = par_root(prepared_input.as_str());
+        let result = par_root(&prepared_input);
         assert_result_ok(result);
     }
     #[test]
@@ -196,7 +196,7 @@ dict2={
             "###;
         let prepared_input = text.replace("\n}\n", "\n}\n#");
 
-        let result = par_root(prepared_input.as_str());
+        let result = par_root(&prepared_input);
 
         assert_result_ok(result);
     }

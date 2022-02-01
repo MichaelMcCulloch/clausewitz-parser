@@ -88,25 +88,25 @@ fn get_key_value_pair_strings(value: &Val, tabs: &str, key: &&str) -> String {
             "{}    {} = \n{}",
             tabs,
             key,
-            format_val(&value, format!("{}{}", tabs, "      ").as_str())
+            format_val(&value, &format!("{}{}", tabs, "      "))
         ),
         Val::NumberedDict(_, _) => format!(
             "{}    {} = \n{}",
             tabs,
             key,
-            format_val(&value, format!("{}{}", tabs, "      ").as_str())
+            format_val(&value, &format!("{}{}", tabs, "      "))
         ),
         Val::Array(_) => format!(
             "{}    {} = \n{}",
             tabs,
             key,
-            format_val(&value, format!("{}{}", tabs, "      ").as_str())
+            format_val(&value, &format!("{}{}", tabs, "      "))
         ),
         Val::Set(_) => format!(
             "{}    {} = \n{}",
             tabs,
             key,
-            format_val(&value, format!("{}{}", tabs, "      ").as_str())
+            format_val(&value, &format!("{}{}", tabs, "      "))
         ),
         Val::StringLiteral(_) => {
             format!("{}    {} = {}", tabs, key, format_val(&value, ""))
@@ -151,7 +151,7 @@ fn format_array(val: &Val, tabs: &str) -> String {
             let mut elements_strings: Vec<String> = vec![];
 
             for element in array_elements {
-                elements_strings.push(format_val(element, format!("{}{}", tabs, "    ").as_str()));
+                elements_strings.push(format_val(element, &format!("{}{}", tabs, "    ")));
             }
             format!("{}[\n{}\n{}]", tabs, elements_strings.join("\n"), tabs)
         }
@@ -164,7 +164,7 @@ fn format_set(val: &Val, tabs: &str) -> String {
             let mut elements_strings: Vec<String> = vec![];
 
             for element in set_elements {
-                elements_strings.push(format_val(element, format!("{}{}", tabs, "    ").as_str()));
+                elements_strings.push(format_val(element, &format!("{}{}", tabs, "    ")));
             }
             format!("{}{{\n{}\n{}}}", tabs, elements_strings.join("\n"), tabs)
         }

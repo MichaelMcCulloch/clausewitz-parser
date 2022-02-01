@@ -14,7 +14,7 @@ fn main() {
 
     let start = Instant::now();
 
-    let _result = par_root(replace.as_str());
+    let _result = par_root(&replace);
 
     let end = start.elapsed();
 
