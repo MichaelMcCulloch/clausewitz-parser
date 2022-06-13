@@ -12,7 +12,7 @@ pub(self) mod tests;
 ))]
 pub(crate) mod simd;
 
-pub(crate) mod bracketed;
+pub mod bracketed;
 pub(crate) mod quoted;
 pub mod root;
 pub(crate) mod space;
