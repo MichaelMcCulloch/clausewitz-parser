@@ -1,15 +1,21 @@
-use std::{fs::File, os::unix::prelude::MetadataExt, time::Instant};
+use std::{
+    fs::{self, File},
+    io::Read,
+    os::unix::prelude::MetadataExt,
+    time::Instant,
+};
 
 use clausewitz_parser::par_root;
 use memmap::Mmap;
 
 fn main() {
-    let filename = "/path/to/unzipped/gamestate/or/meta";
+    let filename = "/home/michael/Desktop/gamestate";
 
     let file = File::open(filename).expect("File not found");
     let mmap = unsafe { Mmap::map(&file).expect(&format!("Error mapping file {:?}", file)) };
 
-    let str = std::str::from_utf8(&mmap[..]).unwrap();
+    let str = String::from_utf8_lossy(&mmap[..]);
+
     let replace = str.replace("\n}\n", "\n}\n#");
 
     let start = Instant::now();
