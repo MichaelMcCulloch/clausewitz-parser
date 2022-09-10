@@ -5,25 +5,21 @@ use std::{
     time::Instant,
 };
 
-use clausewitz_parser::{key_value, par_root};
+use clausewitz_parser::{key_value, par_root, root};
 use memmap::Mmap;
 use nom::InputTake;
 
 fn main() {
-    let filename = "/home/michael/Desktop/gamestate";
+    let filename = "/home/michael/Dev/Stellarust/stellarust_2022/clausewitz-parser/gamestate";
 
     let mut file = File::open(filename).expect("File not found");
     let mmap = unsafe { Mmap::map(&file).expect(&format!("Error mapping file {:?}", file)) };
 
     let str = String::from_utf8_lossy(&mmap[..]);
 
-    let pos = str.find("country={").unwrap();
-    let rep = str.split_at(pos).1;
-    // let replace = str.replace("\n}\n", "\n}\n#");
-
     let start = Instant::now();
 
-    let _result = key_value(&rep).unwrap().1;
+    let (rem, _result) = root(&str).unwrap();
 
     let end = start.elapsed();
 
@@ -36,5 +32,5 @@ fn main() {
         end.as_millis()
     );
 
-    // println!("{}", _result.1);
+    println!("{}", rem);
 }
