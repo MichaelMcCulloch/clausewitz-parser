@@ -10,7 +10,8 @@ use super::{
     quoted::map_to_date,
     simd::{take_while_simd, IDENTIFIER_RANGES},
     tables::{is_digit, is_identifier_char},
-    Res, Val,
+    val::Val,
+    Res,
 };
 
 pub fn date<'a>(input: &'a str) -> Res<&'a str, Val<'a>> {

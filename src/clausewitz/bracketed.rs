@@ -14,8 +14,9 @@ use super::{
     space::{opt_space, req_space},
     tables::{is_digit, is_identifier_char, is_token},
     unquoted::integer,
+    val::Val,
     value::value,
-    Res, Val,
+    Res,
 };
 
 pub fn unquoted_key<'a>(input: &'a str) -> Res<&'a str, &'a str> {

@@ -1,18 +1,12 @@
-use std::{
-    fs::{self, File},
-    io::{BufRead, Read},
-    os::unix::prelude::MetadataExt,
-    time::Instant,
-};
+use std::{fs::File, os::unix::prelude::MetadataExt, time::Instant};
 
-use clausewitz_parser::{key_value, par_root, root};
+use clausewitz_parser::root;
 use memmap::Mmap;
-use nom::InputTake;
 
 fn main() {
     let filename = "/home/michael/Dev/Stellarust/stellarust_2022/clausewitz-parser/gamestate";
 
-    let mut file = File::open(filename).expect("File not found");
+    let file = File::open(filename).expect("File not found");
     let mmap = unsafe { Mmap::map(&file).expect(&format!("Error mapping file {:?}", file)) };
 
     let str = String::from_utf8_lossy(&mmap[..]);
