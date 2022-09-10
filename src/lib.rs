@@ -1,5 +1,5 @@
 mod clausewitz;
-pub mod val;
+pub mod clausewitz_value;
 
 pub use clausewitz::{
     bracketed::key_value,

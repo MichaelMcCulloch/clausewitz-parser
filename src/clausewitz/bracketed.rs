@@ -8,7 +8,7 @@ use nom::{
     sequence::{delimited, preceded, separated_pair, tuple},
 };
 
-use crate::val::Val;
+use crate::clausewitz_value::Val;
 
 use super::{
     quoted::string_literal_contents,

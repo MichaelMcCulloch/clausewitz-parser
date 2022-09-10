@@ -1,7 +1,7 @@
 use nom::combinator::map;
 use rayon::{iter::ParallelIterator, str::ParallelString};
 
-use crate::val::Val;
+use crate::clausewitz_value::Val;
 
 use super::{bracketed::hash_map, Res};
 

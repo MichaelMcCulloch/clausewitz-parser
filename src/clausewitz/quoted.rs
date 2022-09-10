@@ -1,4 +1,4 @@
-use crate::val::Val;
+use crate::clausewitz_value::Val;
 
 use super::{
     simd::{take_while_simd, STRING_LITTERAL_CONTENT_RANGES},
