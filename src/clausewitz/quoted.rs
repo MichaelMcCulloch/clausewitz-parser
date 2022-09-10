@@ -1,8 +1,7 @@
-use crate::clausewitz_value::Val;
-
 use super::{
     simd::{take_while_simd, STRING_LITTERAL_CONTENT_RANGES},
     tables::is_string_litteral_contents,
+    val::Val,
     Res,
 };
 use chrono::NaiveDate;

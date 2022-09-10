@@ -6,12 +6,11 @@ use nom::{
     sequence::tuple,
 };
 
-use crate::clausewitz_value::Val;
-
 use super::{
     quoted::map_to_date,
     simd::{take_while_simd, IDENTIFIER_RANGES},
     tables::{is_digit, is_identifier_char},
+    val::Val,
     Res,
 };
 

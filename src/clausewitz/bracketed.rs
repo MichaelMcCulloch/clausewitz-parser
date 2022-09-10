@@ -8,14 +8,13 @@ use nom::{
     sequence::{delimited, preceded, separated_pair, tuple},
 };
 
-use crate::clausewitz_value::Val;
-
 use super::{
     quoted::string_literal_contents,
     simd::{take_while_simd, IDENTIFIER_RANGES, NOT_TOKEN_RANGES},
     space::{opt_space, req_space},
     tables::{is_digit, is_identifier_char, is_token},
     unquoted::integer,
+    val::Val,
     value::value,
     Res,
 };
