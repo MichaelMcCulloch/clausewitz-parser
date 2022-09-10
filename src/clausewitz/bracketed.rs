@@ -11,7 +11,6 @@ use super::{
     quoted::string_literal_contents,
     simd::{take_simd_identifier, take_simd_not_token},
     space::{opt_space, req_space},
-    tables::is_digit,
     unquoted::integer,
     val::Val,
     value::value,
@@ -20,7 +19,7 @@ use super::{
 
 pub fn unquoted_key<'a>(input: &'a str) -> Res<&'a str, &'a str> {
     verify(take_simd_identifier, |s: &str| {
-        !s.is_empty() && !(is_digit(s.chars().next().unwrap()))
+        !s.is_empty() //&& !(is_digit(s.chars().next().unwrap()))
     })(input)
 }
 
@@ -184,6 +183,18 @@ mod tests {
         #[test]
         fn key_value__quoted__accepted() {
             let text = r###""key.0"=0"###;
+            let result = key_value(text);
+            assert_result_ok(result)
+        }
+        #[test]
+        fn key_value__begins_with_number_quoted__accepted() {
+            let text = r###""0_key.0"=0"###;
+            let result = key_value(text);
+            assert_result_ok(result)
+        }
+        #[test]
+        fn key_value__begins_with_number_unquoted__accepted() {
+            let text = r###"0_key.0=0"###;
             let result = key_value(text);
             assert_result_ok(result)
         }

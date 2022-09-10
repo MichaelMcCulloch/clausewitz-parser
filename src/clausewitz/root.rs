@@ -44,6 +44,19 @@ mod tests {
     }
 
     #[test]
+    fn kv_pair_starts_with_number() {
+        let text = r###"flags={
+            3_year_owner_change_flag={
+                flag_date=63568248
+                flag_days=293
+            }
+        }"###;
+        let result = root(text);
+
+        assert_result_ok(result);
+    }
+
+    #[test]
     fn intel_numbered_dicts() {
         let text = r###"intel={
                                     {
