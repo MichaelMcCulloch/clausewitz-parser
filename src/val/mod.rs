@@ -5,6 +5,26 @@ use std::{
 
 use chrono::NaiveDate;
 
+pub trait ClausewitzValue<'a> {
+    fn get_set_at_path<'b>(&'a self, path: &'b str) -> Result<&'a Vec<Val<'a>>, IndexError>;
+    fn get_date_at_path<'b>(&'a self, path: &'b str) -> Result<&'a NaiveDate, IndexError>;
+    fn get_string_at_path<'b>(&'a self, path: &'b str) -> Result<&'a str, IndexError>;
+    fn get_identifier_at_path<'b>(&'a self, path: &'b str) -> Result<&'a str, IndexError>;
+    fn get_decimal_at_path<'b>(&'a self, path: &'b str) -> Result<&'a f64, IndexError>;
+    fn get_integer_at_path<'b>(&'a self, path: &'b str) -> Result<&'a i64, IndexError>;
+    fn get_number_at_path<'b>(&'a self, path: &'b str) -> Result<f64, IndexError>;
+    fn get_array_at_path<'b>(&'a self, path: &'b str) -> Result<&'a Vec<Val<'a>>, IndexError>;
+    fn get_dict_at_path<'b>(
+        &'a self,
+        path: &'b str,
+    ) -> Result<&'a Vec<(&'a str, Val<'a>)>, IndexError>;
+    fn get_numbered_dict_at_path<'b>(
+        &'a self,
+        path: &'b str,
+    ) -> Result<(&'a i64, &'a Vec<(&'a str, Val<'a>)>), IndexError>;
+    fn get_at_path<'b>(&'a self, path: &'b str) -> Result<&'a Val<'a>, IndexError>;
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum Val<'a> {
     Dict(Vec<(&'a str, Val<'a>)>),
@@ -31,8 +51,8 @@ impl Display for IndexError {
     }
 }
 
-impl<'a> Val<'a> {
-    pub fn get_set_at_path<'b>(&'a self, path: &'b str) -> Result<&'a Vec<Val<'a>>, IndexError> {
+impl<'a> ClausewitzValue<'a> for Val<'a> {
+    fn get_set_at_path<'b>(&'a self, path: &'b str) -> Result<&'a Vec<Val<'a>>, IndexError> {
         match self.get_at_path(path)? {
             Val::Set(s) => Ok(s),
             _ => Err(IndexError {
@@ -40,7 +60,7 @@ impl<'a> Val<'a> {
             }),
         }
     }
-    pub fn get_date_at_path<'b>(&'a self, path: &'b str) -> Result<&'a NaiveDate, IndexError> {
+    fn get_date_at_path<'b>(&'a self, path: &'b str) -> Result<&'a NaiveDate, IndexError> {
         match self.get_at_path(path)? {
             Val::Date(d) => Ok(d),
             _ => Err(IndexError {
@@ -48,7 +68,7 @@ impl<'a> Val<'a> {
             }),
         }
     }
-    pub fn get_string_at_path<'b>(&'a self, path: &'b str) -> Result<&'a str, IndexError> {
+    fn get_string_at_path<'b>(&'a self, path: &'b str) -> Result<&'a str, IndexError> {
         match self.get_at_path(path)? {
             Val::StringLiteral(s) => Ok(s),
             _ => Err(IndexError {
@@ -56,7 +76,7 @@ impl<'a> Val<'a> {
             }),
         }
     }
-    pub fn get_identifier_at_path<'b>(&'a self, path: &'b str) -> Result<&'a str, IndexError> {
+    fn get_identifier_at_path<'b>(&'a self, path: &'b str) -> Result<&'a str, IndexError> {
         match self.get_at_path(path)? {
             Val::Identifier(s) => Ok(s),
             _ => Err(IndexError {
@@ -64,7 +84,7 @@ impl<'a> Val<'a> {
             }),
         }
     }
-    pub fn get_decimal_at_path<'b>(&'a self, path: &'b str) -> Result<&'a f64, IndexError> {
+    fn get_decimal_at_path<'b>(&'a self, path: &'b str) -> Result<&'a f64, IndexError> {
         match self.get_at_path(path)? {
             Val::Decimal(f) => Ok(f),
             _ => Err(IndexError {
@@ -72,7 +92,7 @@ impl<'a> Val<'a> {
             }),
         }
     }
-    pub fn get_integer_at_path<'b>(&'a self, path: &'b str) -> Result<&'a i64, IndexError> {
+    fn get_integer_at_path<'b>(&'a self, path: &'b str) -> Result<&'a i64, IndexError> {
         match self.get_at_path(path)? {
             Val::Integer(f) => Ok(f),
             _ => Err(IndexError {
@@ -81,7 +101,7 @@ impl<'a> Val<'a> {
         }
     }
 
-    pub fn get_number_at_path<'b>(&'a self, path: &'b str) -> Result<f64, IndexError> {
+    fn get_number_at_path<'b>(&'a self, path: &'b str) -> Result<f64, IndexError> {
         match self.get_at_path(path)? {
             Val::Integer(f) => Ok(*f as f64),
             Val::Decimal(f) => Ok(*f),
@@ -93,7 +113,7 @@ impl<'a> Val<'a> {
             }),
         }
     }
-    pub fn get_array_at_path<'b>(&'a self, path: &'b str) -> Result<&'a Vec<Val<'a>>, IndexError> {
+    fn get_array_at_path<'b>(&'a self, path: &'b str) -> Result<&'a Vec<Val<'a>>, IndexError> {
         match self.get_at_path(path)? {
             Val::Array(v) => Ok(v),
             _ => Err(IndexError {
@@ -101,7 +121,7 @@ impl<'a> Val<'a> {
             }),
         }
     }
-    pub fn get_dict_at_path<'b>(
+    fn get_dict_at_path<'b>(
         &'a self,
         path: &'b str,
     ) -> Result<&'a Vec<(&'a str, Val<'a>)>, IndexError> {
@@ -112,7 +132,7 @@ impl<'a> Val<'a> {
             }),
         }
     }
-    pub fn get_numbered_dict_at_path<'b>(
+    fn get_numbered_dict_at_path<'b>(
         &'a self,
         path: &'b str,
     ) -> Result<(&'a i64, &'a Vec<(&'a str, Val<'a>)>), IndexError> {
@@ -124,7 +144,7 @@ impl<'a> Val<'a> {
         }
     }
 
-    pub fn get_at_path<'b>(&'a self, path: &'b str) -> Result<&'a Val<'a>, IndexError> {
+    fn get_at_path<'b>(&'a self, path: &'b str) -> Result<&'a Val<'a>, IndexError> {
         let path_components = path.split(".").collect::<Vec<_>>();
         path_components
             .into_iter()
