@@ -2,17 +2,10 @@ use chrono::NaiveDate;
 use nom::{
     character::complete::{char, digit1},
     combinator::{map, map_res, opt, recognize, verify},
-    error::VerboseError,
     sequence::tuple,
 };
 
-use super::{
-    quoted::map_to_date,
-    simd::{take_while_simd, IDENTIFIER_RANGES},
-    tables::{is_digit, is_identifier_char},
-    val::Val,
-    Res,
-};
+use super::{quoted::map_to_date, simd::take_simd_identifier, tables::is_digit, val::Val, Res};
 
 pub fn date<'a>(input: &'a str) -> Res<&'a str, Val<'a>> {
     map(
@@ -48,10 +41,9 @@ pub fn integer<'a>(input: &'a str) -> Res<&'a str, Val<'a>> {
 
 pub fn identifier<'a>(input: &'a str) -> Res<&'a str, Val<'a>> {
     map(
-        verify(
-            take_while_simd::<'a, _, VerboseError<&'a str>>(is_identifier_char, IDENTIFIER_RANGES),
-            |s: &str| !s.is_empty() && !(is_digit(s.chars().next().unwrap())),
-        ),
+        verify(take_simd_identifier, |s: &str| {
+            !s.is_empty() && !(is_digit(s.chars().next().unwrap()))
+        }),
         |s: &str| Val::Identifier(s),
     )(input)
 }

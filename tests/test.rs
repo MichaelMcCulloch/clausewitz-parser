@@ -14,6 +14,7 @@ mod file_test {
         let result = root(&text);
 
         assert!(result.is_ok());
+        assert!(result.unwrap().0.is_empty())
     }
 
     #[test]

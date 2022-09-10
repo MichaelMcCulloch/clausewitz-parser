@@ -12,6 +12,7 @@ pub fn assert_result_ok<T: Debug + Clone>(result: Res<&str, T>) {
         };
     }
     assert!(result.is_ok());
+    assert!(result.unwrap().0.is_empty())
 }
 
 pub fn assert_result_err<T: Debug + Clone>(result: Res<&str, T>) {

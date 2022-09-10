@@ -1,15 +1,9 @@
-use super::{
-    simd::{take_while_simd, STRING_LITTERAL_CONTENT_RANGES},
-    tables::is_string_litteral_contents,
-    val::Val,
-    Res,
-};
+use super::{simd::take_simd_string_literal, val::Val, Res};
 use chrono::NaiveDate;
 use nom::{
     branch::alt,
     character::complete::{char, digit1},
     combinator::{cut, map, map_res, recognize},
-    error::VerboseError,
     sequence::{delimited, tuple},
 };
 use std::{
@@ -70,10 +64,7 @@ pub fn map_to_date<'a>(s: &'a str) -> anyhow::Result<NaiveDate> {
 }
 
 pub fn string_literal_contents<'a>(input: &'a str) -> Res<&'a str, &'a str> {
-    take_while_simd::<'a, _, VerboseError<&'a str>>(
-        is_string_litteral_contents,
-        STRING_LITTERAL_CONTENT_RANGES,
-    )(input)
+    take_simd_string_literal(input)
 }
 
 pub fn string_literal<'a>(input: &'a str) -> Res<&'a str, Val<'a>> {

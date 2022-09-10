@@ -26,11 +26,34 @@ pub const IDENTIFIER_RANGES: &[u8; 16] = &[
 
 const CHUNK_SIZE: usize = 16;
 
-use nom::error::ParseError;
+use nom::error::{ParseError, VerboseError};
 
+use super::tables::{is_identifier_char, is_space, is_string_litteral_contents, is_token};
 use super::Res;
 
-pub fn take_while_simd<'a, Condition, Error: ParseError<&'a str>>(
+pub fn take_simd_identifier<'a>(input: &'a str) -> Res<&'a str, &'a str> {
+    take_while_simd::<'a, _, VerboseError<&'a str>>(is_identifier_char, IDENTIFIER_RANGES)(input)
+}
+pub fn take_simd_string_literal<'a>(input: &'a str) -> Res<&'a str, &'a str> {
+    take_while_simd::<'a, _, VerboseError<&'a str>>(
+        is_string_litteral_contents,
+        STRING_LITTERAL_CONTENT_RANGES,
+    )(input)
+}
+pub fn take_simd_not_token<'a>(input: &'a str) -> Res<&'a str, &'a str> {
+    take_while_simd::<'a, _, VerboseError<&'a str>>(
+        move |character| !is_token(character),
+        NOT_TOKEN_RANGES,
+    )(input)
+}
+pub fn take_simd_space<'a>(input: &'a str) -> Res<&'a str, &'a str> {
+    take_while_simd::<'a, _, VerboseError<&'a str>>(
+        move |character| is_space(character),
+        SPACE_RANGES,
+    )(input)
+}
+
+fn take_while_simd<'a, Condition, Error: ParseError<&'a str>>(
     cond: Condition,
     ranges: &'static [u8; CHUNK_SIZE],
 ) -> impl Fn(&'a str) -> Res<&'a str, &'a str>

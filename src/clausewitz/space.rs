@@ -1,15 +1,8 @@
-use super::{
-    simd::{take_while_simd, SPACE_RANGES},
-    tables::is_space,
-    Res,
-};
-use nom::{combinator::verify, error::VerboseError};
+use super::{simd::take_simd_space, Res};
+use nom::combinator::verify;
 
 pub fn opt_space<'a>(input: &'a str) -> Res<&'a str, &'a str> {
-    take_while_simd::<'a, _, VerboseError<&'a str>>(
-        move |character| is_space(character),
-        SPACE_RANGES,
-    )(input)
+    take_simd_space(input)
 }
 
 pub fn req_space<'a>(input: &'a str) -> Res<&'a str, &'a str> {
