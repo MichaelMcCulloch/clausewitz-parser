@@ -84,21 +84,22 @@ pub fn set_of_collections<'a>(input: &'a str) -> Res<&'a str, Val<'a>> {
     map(separated_list0(req_space, bracketed), |vals| Val::Set(vals))(input)
 }
 pub fn contents<'a>(input: &'a str) -> Res<&'a str, Val<'a>> {
-    let (remainder, maybe_key_number_idenentifier): (&'a str, &'a str) =
-        take_simd_not_token(input)?;
+    let (remainder, maybe_key_number_identifier): (&'a str, &'a str) = take_simd_not_token(input)?;
 
     let (_remainder, next_token) = take(1 as usize)(remainder)?;
 
     if next_token == "}" {
         return cut(set)(input);
     } else if next_token == "=" {
-        return if integer(maybe_key_number_idenentifier).is_ok() {
-            cut(array)(input)
-        } else {
-            cut(dict)(input)
+        let identifier = take_simd_identifier(maybe_key_number_identifier);
+        let integer = integer(maybe_key_number_identifier);
+        return match (identifier, integer) {
+            (Ok(_), Ok(_)) | (Ok(_), Err(_)) => cut(dict)(input),
+            (Err(_), Ok(_)) => cut(array)(input),
+            (Err(_), Err(_)) => panic!(),
         };
     } else if next_token == "{" {
-        return if integer(maybe_key_number_idenentifier).is_ok() {
+        return if integer(maybe_key_number_identifier).is_ok() {
             cut(numbered_dict)(input)
         } else {
             cut(set_of_collections)(input)

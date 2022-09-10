@@ -10,7 +10,7 @@ pub fn root<'a>(input: &'a str) -> Res<&'a str, Val<'a>> {
 
 #[cfg(test)]
 mod tests {
-    use crate::clausewitz::tests::helper::assert_result_ok;
+    use crate::{clausewitz::tests::helper::assert_result_ok, key_value};
 
     use super::*;
     #[test]
@@ -51,7 +51,8 @@ mod tests {
                 flag_days=293
             }
         }"###;
-        let result = root(text);
+        let result = key_value(text);
+        println!("{:?}", result);
 
         assert_result_ok(result);
     }
