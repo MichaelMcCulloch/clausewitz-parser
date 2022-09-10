@@ -6,4 +6,4 @@ pub use clausewitz::{
     root::{par_root, root},
 };
 
-pub use val::{IndexError, Val};
+pub use val::{fns, IndexError, Val};
