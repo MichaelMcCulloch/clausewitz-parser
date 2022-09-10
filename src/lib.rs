@@ -5,3 +5,4 @@ pub use clausewitz::{
     bracketed::key_value,
     root::{par_root, root},
 };
+pub use clausewitz_value as value;
