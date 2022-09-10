@@ -18,4 +18,6 @@ pub(crate) mod unquoted;
 pub mod val;
 pub(crate) mod value;
 
+pub use val::ClausewitzValue as ValClausewitzValue;
+
 pub(crate) type Res<T, S> = IResult<T, S, VerboseError<T>>;
