@@ -10,9 +10,9 @@ use memmap::Mmap;
 use nom::InputTake;
 
 fn main() {
-    let filename = "/home/michael/.local/share/Paradox Interactive/Stellaris/save games/unitednationsofearth_-15512622/gamestate";
+    let filename = "/home/michael/Dev/Stellarust/clausewitz-parser/production_data/3.4.5.95132/2213.12.13/gamestate";
 
-    let mut file = File::open(filename).expect("File not found");
+    let file = File::open(filename).expect("File not found");
     let mmap = unsafe { Mmap::map(&file).expect(&format!("Error mapping file {:?}", file)) };
 
     let str = String::from_utf8_lossy(&mmap[..]);

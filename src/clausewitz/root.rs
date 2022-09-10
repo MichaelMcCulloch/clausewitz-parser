@@ -1,5 +1,4 @@
 use nom::combinator::map;
-use rayon::{iter::ParallelIterator, str::ParallelString};
 
 use super::{bracketed::hash_map, val::Val, Res};
 
@@ -8,21 +7,6 @@ pub fn root<'a>(input: &'a str) -> Res<&'a str, Val<'a>> {
 }
 
 //Just a bit sloppy
-pub fn par_root<'a>(prepared_input: &'a str) -> Res<&'a str, Val<'a>> {
-    let vec: Vec<(&str, Val)> = prepared_input
-        .par_split('#')
-        .filter_map(|s| {
-            if let Ok((_rem, val)) = hash_map(s) {
-                Some(val)
-            } else {
-                None
-            }
-        })
-        .flatten()
-        .collect();
-
-    Ok(("", Val::Dict(vec)))
-}
 
 #[cfg(test)]
 mod tests {
@@ -38,7 +22,7 @@ mod tests {
             float=-0.123939887
             "###;
 
-        let result = par_root(text);
+        let result = root(text);
         assert_result_ok(result);
     }
 
@@ -49,7 +33,7 @@ mod tests {
 }
 "###;
         let prepared_input = text.replace("\n}\n", "\n}\n#");
-        let result = par_root(&prepared_input);
+        let result = root(&prepared_input);
         assert_result_ok(result);
     }
     #[test]
@@ -58,7 +42,7 @@ mod tests {
                 0=shipyard				1=trading_hub			}
                 "###;
 
-        let result = par_root(text);
+        let result = root(text);
         assert_result_ok(result);
     }
 
@@ -81,7 +65,7 @@ mod tests {
                                     }
                                 }
 "###;
-        let result = par_root(text);
+        let result = root(text);
 
         assert_result_ok(result);
     }
@@ -105,7 +89,7 @@ mod tests {
                 }
             }"###;
 
-        let result = par_root(text);
+        let result = root(text);
         assert_result_ok(result);
     }
 
@@ -114,7 +98,7 @@ mod tests {
         let text = r###""The name Of A Ship"=0
             "###;
 
-        let result = par_root(text);
+        let result = root(text);
         assert_result_ok(result);
     }
 
@@ -123,7 +107,7 @@ mod tests {
         let text = r###"empty_set={}
             "###;
 
-        let result = par_root(text);
+        let result = root(text);
         assert_result_ok(result);
     }
 
@@ -136,7 +120,7 @@ mod tests {
             }
             "###;
 
-        let result = par_root(text);
+        let result = root(text);
         assert_result_ok(result);
     }
 
@@ -155,7 +139,7 @@ mod tests {
             }
             "###;
 
-        let result = par_root(text);
+        let result = root(text);
         assert_result_ok(result);
     }
 
@@ -164,7 +148,7 @@ mod tests {
         let text = r###"identifier=identi_fire
             "###;
 
-        let result = par_root(text);
+        let result = root(text);
         assert_result_ok(result);
     }
 
@@ -177,12 +161,12 @@ mod tests {
             }
             "###;
 
-        let result = par_root(text);
+        let result = root(text);
         assert_result_ok(result);
     }
 
     #[test]
-    fn par_root__key_identifier_pairs__ok() {
+    fn root__key_identifier_pairs__ok() {
         let text = r###"dict={
     alpha=a
     beta=b
@@ -196,7 +180,7 @@ dict2={
             "###;
         let prepared_input = text.replace("\n}\n", "\n}\n#");
 
-        let result = par_root(&prepared_input);
+        let result = root(&prepared_input);
 
         assert_result_ok(result);
     }
