@@ -2,6 +2,7 @@ use chrono::NaiveDate;
 use nom::{
     character::complete::{char, digit1},
     combinator::{map, map_res, opt, recognize, verify},
+    error::VerboseError,
     sequence::tuple,
 };
 

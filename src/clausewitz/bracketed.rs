@@ -91,12 +91,11 @@ pub fn contents<'a>(input: &'a str) -> Res<&'a str, Val<'a>> {
     if next_token == "}" {
         return cut(set)(input);
     } else if next_token == "=" {
-        let identifier = take_simd_identifier(maybe_key_number_identifier);
-        let integer = integer(maybe_key_number_identifier);
-        return match (identifier, integer) {
-            (Ok(_), Ok(_)) | (Ok(_), Err(_)) => cut(dict)(input),
-            (Err(_), Ok(_)) => cut(array)(input),
-            (Err(_), Err(_)) => panic!(),
+        let (_rem, maybe_ident) = take_simd_identifier(maybe_key_number_identifier)?;
+        return if let Ok(_) = maybe_ident.parse::<i64>() {
+            cut(array)(input)
+        } else {
+            cut(dict)(input)
         };
     } else if next_token == "{" {
         return if integer(maybe_key_number_identifier).is_ok() {
