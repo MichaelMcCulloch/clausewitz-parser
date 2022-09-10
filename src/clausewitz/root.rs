@@ -19,8 +19,7 @@ mod tests {
             version_control_revision=83287
             date="2200.05.01"
             date="0.05.01"
-            float=-0.123939887
-            "###;
+            float=-0.123939887"###;
 
         let result = root(text);
         assert_result_ok(result);
@@ -30,17 +29,15 @@ mod tests {
     fn set_numbers_same_line() {
         let text = r###"set_of_numbers={
     40 41
-}
-"###;
-        let prepared_input = text.replace("\n}\n", "\n}\n#");
-        let result = root(&prepared_input);
+}"###;
+
+        let result = root(&text);
         assert_result_ok(result);
     }
     #[test]
     fn space_not_new_line() {
         let text = r###"modules={
-                0=shipyard				1=trading_hub			}
-                "###;
+                0=shipyard				1=trading_hub			}"###;
 
         let result = root(text);
         assert_result_ok(result);
@@ -63,8 +60,7 @@ mod tests {
                                             }
                                         }
                                     }
-                                }
-"###;
+                                }"###;
         let result = root(text);
 
         assert_result_ok(result);
@@ -95,8 +91,7 @@ mod tests {
 
     #[test]
     fn quoted__key__ok() {
-        let text = r###""The name Of A Ship"=0
-            "###;
+        let text = r###""The name Of A Ship"=0"###;
 
         let result = root(text);
         assert_result_ok(result);
@@ -104,8 +99,7 @@ mod tests {
 
     #[test]
     fn empty__set__set() {
-        let text = r###"empty_set={}
-            "###;
+        let text = r###"empty_set={}"###;
 
         let result = root(text);
         assert_result_ok(result);
@@ -117,8 +111,7 @@ mod tests {
                 "Ancient Relics Story Pack"
                 "Anniversary Portraits"
                 "Apocalypse"
-            }
-            "###;
+            }"###;
 
         let result = root(text);
         assert_result_ok(result);
@@ -136,8 +129,7 @@ mod tests {
                 2={
                     0="two"
                 }
-            }
-            "###;
+            }"###;
 
         let result = root(text);
         assert_result_ok(result);
@@ -145,8 +137,7 @@ mod tests {
 
     #[test]
     fn identifier__with__underscore() {
-        let text = r###"identifier=identi_fire
-            "###;
+        let text = r###"identifier=identi_fire"###;
 
         let result = root(text);
         assert_result_ok(result);
@@ -158,8 +149,7 @@ mod tests {
                 alpha=a
                 beta=b
                 cthulhu=ilhjok
-            }
-            "###;
+            }"###;
 
         let result = root(text);
         assert_result_ok(result);
@@ -176,11 +166,9 @@ dict2={
     charlie=a
     delta=b
     zoo=ilhjok
-}
-            "###;
-        let prepared_input = text.replace("\n}\n", "\n}\n#");
+}"###;
 
-        let result = root(&prepared_input);
+        let result = root(&text);
 
         assert_result_ok(result);
     }

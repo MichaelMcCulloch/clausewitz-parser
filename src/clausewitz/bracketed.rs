@@ -176,16 +176,14 @@ mod tests {
 
         #[test]
         fn key_value__unquoted__accepted() {
-            let text = r###"key.0="value"
-			"###;
+            let text = r###"key.0="value""###;
             let result = key_value(text);
             assert_result_ok(result)
         }
 
         #[test]
         fn key_value__quoted__accepted() {
-            let text = r###""key.0"=0
-			"###;
+            let text = r###""key.0"=0"###;
             let result = key_value(text);
             assert_result_ok(result)
         }
