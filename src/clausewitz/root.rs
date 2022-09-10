@@ -1,7 +1,9 @@
 use nom::combinator::map;
 use rayon::{iter::ParallelIterator, str::ParallelString};
 
-use super::{bracketed::hash_map, val::Val, Res};
+use crate::val::Val;
+
+use super::{bracketed::hash_map, Res};
 
 pub fn root<'a>(input: &'a str) -> Res<&'a str, Val<'a>> {
     map(hash_map, Val::Dict)(input)

@@ -15,7 +15,6 @@ pub mod root;
 pub(crate) mod space;
 pub(crate) mod tables;
 pub(crate) mod unquoted;
-pub mod val;
 pub(crate) mod value;
 
 pub(crate) type Res<T, S> = IResult<T, S, VerboseError<T>>;
