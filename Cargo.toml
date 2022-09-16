@@ -5,9 +5,9 @@ edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
-[dependencies]
-nom = "7.1.0"
-chrono = "0.4.19"
+[dependencies] 
+nom = "7.1.1"
+chrono = "0.4.22"
 anyhow = "1.0.53"
 memmap = "0.7.0"
 
