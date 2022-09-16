@@ -1,129 +1,119 @@
-use std::{
-    arch::x86_64::{
-        _mm_cmpestri, _mm_loadu_si128, _SIDD_CMP_RANGES, _SIDD_LEAST_SIGNIFICANT, _SIDD_UBYTE_OPS,
-    },
-    cmp::min,
-    f32::consts::E,
-    ops::RangeFrom,
-    path::Iter,
-    process::exit,
-    str::{CharIndices, Chars},
-    vec,
-};
+use std::vec;
 
 use nom::{
     branch::alt,
     bytes::complete::{take, take_while},
     character::complete::{char, digit1},
-    combinator::{cut, map, map_res, opt, recognize, verify},
+    combinator::{cut, map, opt, recognize, verify},
     error::{ParseError, VerboseError, VerboseErrorKind},
     multi::separated_list0,
     sequence::{delimited, preceded, separated_pair, tuple},
     AsChar, IResult, InputIter, InputLength, Needed, Parser, Slice,
 };
 const CHUNK_SIZE: usize = 16;
-use super::tables::{
-    identifier_table, is_digit, is_space, is_string_litteral_contents, space_table,
-    string_literal_content_table, token_table,
+use super::{
+    simd::{take_simd_identifier, take_simd_not_token, take_simd_space, take_simd_string_literal},
+    tables::{identifier_table, is_digit},
 };
-mod isp;
+pub mod isp;
 use isp::*;
-type SkimResult<X, PARSED> = IResult<X, PARSED, VerboseError<X>>;
+type SR<X, PARSED> = IResult<X, PARSED, VerboseError<X>>;
 
-pub fn take_simd_spaces<'a, 'b>(
-    input: InputSearchPair<'a, 'b>,
-) -> SkimResult<InputSearchPair<'a, 'b>, &'a str> {
-    todo!()
+pub fn opt_space<'a, 'b>(input: ISP<'a, 'b>) -> SR<ISP<'a, 'b>, ISP<'a, 'b>> {
+    match take_simd_space(input.slice) {
+        Ok((rem, spaces)) => Ok((
+            ISP {
+                slice: rem,
+                search_path: input.search_path,
+                search_path_index: input.search_path_index,
+            },
+            ISP {
+                slice: spaces,
+                search_path: input.search_path,
+                search_path_index: input.search_path_index,
+            },
+        )),
+        Err(e) => Err(e.map(|e| VerboseError {
+            errors: e
+                .errors
+                .into_iter()
+                .map(|(str, vbe)| (input, VerboseErrorKind::Context("whatever")))
+                .collect(),
+        })),
+    }
 }
-pub fn opt_space<'a, 'b>(
-    input: InputSearchPair<'a, 'b>,
-) -> SkimResult<InputSearchPair<'a, 'b>, InputSearchPair<'a, 'b>> {
-    take_while(|character| space_table()[character as usize])(input)
+pub fn req_space<'a, 'b>(input: ISP<'a, 'b>) -> SR<ISP<'a, 'b>, ISP<'a, 'b>> {
+    verify(opt_space, |spaces: &ISP| !spaces.slice.is_empty())(input)
 }
-pub fn req_space<'a, 'b>(
-    input: InputSearchPair<'a, 'b>,
-) -> SkimResult<InputSearchPair<'a, 'b>, InputSearchPair<'a, 'b>> {
-    verify(opt_space, |spaces: &InputSearchPair| {
-        !spaces.slice.is_empty()
-    })(input)
-}
-pub fn key<'a, 'b>(
-    input: InputSearchPair<'a, 'b>,
-) -> SkimResult<InputSearchPair<'a, 'b>, InputSearchPair<'a, 'b>> {
+pub fn key<'a, 'b>(input: ISP<'a, 'b>) -> SR<ISP<'a, 'b>, ISP<'a, 'b>> {
     alt((unquoted_key, quoted_key))(input)
 }
-pub fn quoted_key<'a, 'b>(
-    input: InputSearchPair<'a, 'b>,
-) -> SkimResult<InputSearchPair<'a, 'b>, InputSearchPair<'a, 'b>> {
+pub fn quoted_key<'a, 'b>(input: ISP<'a, 'b>) -> SR<ISP<'a, 'b>, ISP<'a, 'b>> {
     delimited(char('\"'), string_literal_contents, char('\"'))(input)
 }
 
-pub fn string_literal_contents<'a, 'b>(
-    input: InputSearchPair<'a, 'b>,
-) -> SkimResult<InputSearchPair<'a, 'b>, InputSearchPair<'a, 'b>> {
-    take_while(|char| string_literal_content_table()[char as usize])(input)
+pub fn string_literal_contents<'a, 'b>(input: ISP<'a, 'b>) -> SR<ISP<'a, 'b>, ISP<'a, 'b>> {
+    match take_simd_string_literal(input.slice) {
+        Ok((rem, spaces)) => Ok((
+            ISP {
+                slice: rem,
+                search_path: input.search_path,
+                search_path_index: input.search_path_index,
+            },
+            ISP {
+                slice: spaces,
+                search_path: input.search_path,
+                search_path_index: input.search_path_index,
+            },
+        )),
+        Err(e) => Err(e.map(|e| VerboseError {
+            errors: e
+                .errors
+                .into_iter()
+                .map(|(str, vbe)| (input, VerboseErrorKind::Context("whatever")))
+                .collect(),
+        })),
+    }
 }
-pub fn unquoted_key<'a, 'b>(
-    input: InputSearchPair<'a, 'b>,
-) -> SkimResult<InputSearchPair<'a, 'b>, InputSearchPair<'a, 'b>> {
-    let first = take_while(|char| identifier_table()[char as usize]);
-    verify(first, |key: &InputSearchPair| !key.slice.is_empty())(input)
+pub fn unquoted_key<'a, 'b>(input: ISP<'a, 'b>) -> SR<ISP<'a, 'b>, ISP<'a, 'b>> {
+    verify(identifier_simd, |key: &ISP| !key.slice.is_empty())(input)
 }
-pub fn date<'a, 'b>(
-    input: InputSearchPair<'a, 'b>,
-) -> SkimResult<InputSearchPair<'a, 'b>, InputSearchPair<'a, 'b>> {
+pub fn date<'a, 'b>(input: ISP<'a, 'b>) -> SR<ISP<'a, 'b>, ISP<'a, 'b>> {
     recognize(tuple((digit1, char('.'), digit1, char('.'), digit1)))(input)
 }
-pub fn string_literal<'a, 'b>(
-    input: InputSearchPair<'a, 'b>,
-) -> SkimResult<InputSearchPair<'a, 'b>, InputSearchPair<'a, 'b>> {
-    take_while(|char| string_literal_content_table()[char as usize])(input)
+pub fn string_literal<'a, 'b>(input: ISP<'a, 'b>) -> SR<ISP<'a, 'b>, ISP<'a, 'b>> {
+    string_literal_contents(input)
 }
 
 ///I think if we reach quoted or unquoted, we've found our value
-pub fn quoted<'a, 'b>(
-    input: InputSearchPair<'a, 'b>,
-) -> SkimResult<InputSearchPair<'a, 'b>, Vec<InputSearchPair<'a, 'b>>> {
+pub fn quoted<'a, 'b>(input: ISP<'a, 'b>) -> SR<ISP<'a, 'b>, Vec<ISP<'a, 'b>>> {
     map(
         delimited(char('\"'), cut(alt((date, string_literal))), char('\"')),
         |isp| vec![isp],
     )(input)
 }
-pub fn integer<'a, 'b>(
-    input: InputSearchPair<'a, 'b>,
-) -> SkimResult<InputSearchPair<'a, 'b>, InputSearchPair<'a, 'b>> {
+pub fn integer<'a, 'b>(input: ISP<'a, 'b>) -> SR<ISP<'a, 'b>, ISP<'a, 'b>> {
     verify(recognize(tuple((opt(char('-')), digit1))), |s: &str| {
         !s.is_empty()
     })(input)
 }
-pub fn decimal<'a, 'b>(
-    input: InputSearchPair<'a, 'b>,
-) -> SkimResult<InputSearchPair<'a, 'b>, InputSearchPair<'a, 'b>> {
+pub fn decimal<'a, 'b>(input: ISP<'a, 'b>) -> SR<ISP<'a, 'b>, ISP<'a, 'b>> {
     recognize(tuple((opt(char('-')), digit1, char('.'), digit1)))(input)
 }
-pub fn identifier<'a, 'b>(
-    input: InputSearchPair<'a, 'b>,
-) -> SkimResult<InputSearchPair<'a, 'b>, InputSearchPair<'a, 'b>> {
-    verify(
-        take_while(|char| identifier_table()[char as usize]),
-        |s: &str| !s.is_empty() && !(is_digit(s.chars().next().unwrap())),
-    )(input)
+pub fn identifier<'a, 'b>(input: ISP<'a, 'b>) -> SR<ISP<'a, 'b>, ISP<'a, 'b>> {
+    verify(identifier_simd, |s: &str| {
+        !s.is_empty() && !(is_digit(s.chars().next().unwrap()))
+    })(input)
 }
 ///I think if we reach quoted or unquoted, we've found our value
-pub fn unquoted<'a, 'b>(
-    input: InputSearchPair<'a, 'b>,
-) -> SkimResult<InputSearchPair<'a, 'b>, Vec<InputSearchPair<'a, 'b>>> {
+pub fn unquoted<'a, 'b>(input: ISP<'a, 'b>) -> SR<ISP<'a, 'b>, Vec<ISP<'a, 'b>>> {
     map(alt((date, decimal, integer, identifier)), |isp| vec![isp])(input)
 }
-pub fn value<'a, 'b>(
-    input: InputSearchPair<'a, 'b>,
-) -> SkimResult<InputSearchPair<'a, 'b>, Vec<InputSearchPair<'a, 'b>>> {
+pub fn value<'a, 'b>(input: ISP<'a, 'b>) -> SR<ISP<'a, 'b>, Vec<ISP<'a, 'b>>> {
     alt((bracketed, quoted, unquoted))(input)
 }
 
-pub fn bracketed<'a, 'b>(
-    input: InputSearchPair<'a, 'b>,
-) -> SkimResult<InputSearchPair<'a, 'b>, Vec<InputSearchPair<'a, 'b>>> {
+pub fn bracketed<'a, 'b>(input: ISP<'a, 'b>) -> SR<ISP<'a, 'b>, Vec<ISP<'a, 'b>>> {
     delimited(
         char('{'),
         cut(delimited(opt_space, contents, opt_space)),
@@ -131,9 +121,7 @@ pub fn bracketed<'a, 'b>(
     )(input)
 }
 
-pub fn set<'a, 'b>(
-    input: InputSearchPair<'a, 'b>,
-) -> SkimResult<InputSearchPair<'a, 'b>, Vec<InputSearchPair<'a, 'b>>> {
+pub fn set<'a, 'b>(input: ISP<'a, 'b>) -> SR<ISP<'a, 'b>, Vec<ISP<'a, 'b>>> {
     alt((
         map(separated_list0(req_space, value), |vvec| {
             vvec.into_iter().flat_map(|vec| vec).collect()
@@ -142,18 +130,14 @@ pub fn set<'a, 'b>(
     ))(input)
 }
 
-pub fn number_value<'a, 'b>(
-    input: InputSearchPair<'a, 'b>,
-) -> SkimResult<InputSearchPair<'a, 'b>, Vec<InputSearchPair<'a, 'b>>> {
+pub fn number_value<'a, 'b>(input: ISP<'a, 'b>) -> SR<ISP<'a, 'b>, Vec<ISP<'a, 'b>>> {
     let (mut rem_number, number) = preceded(
         opt_space,
-        verify(recognize(digit1), |isp: &InputSearchPair| {
-            !isp.slice.is_empty()
-        }),
+        verify(recognize(digit1), |isp: &ISP| !isp.slice.is_empty()),
     )(input)?;
 
     if number.slice == number.search_path[number.search_path_index] {
-        rem_number = InputSearchPair {
+        rem_number = ISP {
             slice: rem_number.slice,
             search_path: rem_number.search_path,
             search_path_index: rem_number.search_path_index + 1,
@@ -162,7 +146,7 @@ pub fn number_value<'a, 'b>(
         let (mut rem_val, val) = preceded(opt_space, value)(rem_eq)?;
 
         //since we may come back to this in another iteration of the separated list that called it, we need to re increment the key for it's next loop
-        rem_val = InputSearchPair {
+        rem_val = ISP {
             slice: rem_val.slice,
             search_path: rem_val.search_path,
             search_path_index: rem_val.search_path_index - 1,
@@ -175,9 +159,7 @@ pub fn number_value<'a, 'b>(
     }
 }
 
-pub fn array<'a, 'b>(
-    input: InputSearchPair<'a, 'b>,
-) -> SkimResult<InputSearchPair<'a, 'b>, Vec<InputSearchPair<'a, 'b>>> {
+pub fn array<'a, 'b>(input: ISP<'a, 'b>) -> SR<ISP<'a, 'b>, Vec<ISP<'a, 'b>>> {
     let f = number_value(input);
 
     map(
@@ -191,22 +173,16 @@ pub fn array<'a, 'b>(
     )(input)
 }
 
-pub fn dict<'a, 'b>(
-    input: InputSearchPair<'a, 'b>,
-) -> SkimResult<InputSearchPair<'a, 'b>, Vec<InputSearchPair<'a, 'b>>> {
+pub fn dict<'a, 'b>(input: ISP<'a, 'b>) -> SR<ISP<'a, 'b>, Vec<ISP<'a, 'b>>> {
     (search_hashmap)(input)
 }
 
-pub fn set_of_collections<'a, 'b>(
-    input: InputSearchPair<'a, 'b>,
-) -> SkimResult<InputSearchPair<'a, 'b>, Vec<InputSearchPair<'a, 'b>>> {
+pub fn set_of_collections<'a, 'b>(input: ISP<'a, 'b>) -> SR<ISP<'a, 'b>, Vec<ISP<'a, 'b>>> {
     map(separated_list0(req_space, bracketed), |vals| {
         vals.into_iter().flat_map(|f| f).collect()
     })(input)
 }
-pub fn numbered_dict<'a, 'b>(
-    input: InputSearchPair<'a, 'b>,
-) -> SkimResult<InputSearchPair<'a, 'b>, Vec<InputSearchPair<'a, 'b>>> {
+pub fn numbered_dict<'a, 'b>(input: ISP<'a, 'b>) -> SR<ISP<'a, 'b>, Vec<ISP<'a, 'b>>> {
     map(
         tuple((
             verify(recognize(digit1), |s: &str| !s.is_empty()),
@@ -221,19 +197,15 @@ pub fn numbered_dict<'a, 'b>(
     )(input)
 }
 
-pub fn contents<'a, 'b>(
-    input: InputSearchPair<'a, 'b>,
-) -> SkimResult<InputSearchPair<'a, 'b>, Vec<InputSearchPair<'a, 'b>>> {
-    let (remainder, maybe_key_number_identifier) =
-        take_while(move |character| !token_table()[character as usize])(input)?;
+pub fn contents<'a, 'b>(input: ISP<'a, 'b>) -> SR<ISP<'a, 'b>, Vec<ISP<'a, 'b>>> {
+    let (remainder, maybe_key_number_identifier) = not_token(input)?;
 
     let (_remainder, next_token) = take(1 as usize)(remainder)?;
 
     if next_token.slice == "}" {
         return cut(set)(input);
     } else if next_token.slice == "=" {
-        let (_rem, maybe_ident) =
-            take_while(|char| identifier_table()[char as usize])(maybe_key_number_identifier)?;
+        let (_rem, maybe_ident) = identifier_simd(maybe_key_number_identifier)?;
         return if let Ok(_) = maybe_ident.slice.parse::<i64>() {
             cut(array)(input)
         } else {
@@ -251,14 +223,60 @@ pub fn contents<'a, 'b>(
         panic!("Token = or }} not found, possibly missing a closing brace somewhere?")
     };
 }
-fn key_value<'a, 'b>(
-    input: InputSearchPair<'a, 'b>,
-) -> SkimResult<InputSearchPair<'a, 'b>, Vec<InputSearchPair<'a, 'b>>> {
+
+fn identifier_simd<'a, 'b>(input: ISP<'a, 'b>) -> SR<ISP<'a, 'b>, ISP<'a, 'b>> {
+    match take_simd_identifier(input.slice) {
+        Ok((rem, spaces)) => Ok((
+            ISP {
+                slice: rem,
+                search_path: input.search_path,
+                search_path_index: input.search_path_index,
+            },
+            ISP {
+                slice: spaces,
+                search_path: input.search_path,
+                search_path_index: input.search_path_index,
+            },
+        )),
+        Err(e) => Err(e.map(|e| VerboseError {
+            errors: e
+                .errors
+                .into_iter()
+                .map(|(str, vbe)| (input, VerboseErrorKind::Context("whatever")))
+                .collect(),
+        })),
+    }
+}
+
+fn not_token<'a, 'b>(input: ISP<'a, 'b>) -> SR<ISP<'a, 'b>, ISP<'a, 'b>> {
+    match take_simd_not_token(input.slice) {
+        Ok((rem, spaces)) => Ok((
+            ISP {
+                slice: rem,
+                search_path: input.search_path,
+                search_path_index: input.search_path_index,
+            },
+            ISP {
+                slice: spaces,
+                search_path: input.search_path,
+                search_path_index: input.search_path_index,
+            },
+        )),
+        Err(e) => Err(e.map(|e| VerboseError {
+            errors: e
+                .errors
+                .into_iter()
+                .map(|(str, vbe)| (input, VerboseErrorKind::Context("whatever")))
+                .collect(),
+        })),
+    }
+}
+fn key_value<'a, 'b>(input: ISP<'a, 'b>) -> SR<ISP<'a, 'b>, Vec<ISP<'a, 'b>>> {
     match preceded(opt_space, key)(input) {
         Ok((mut rem_key, key)) => {
             if key.slice == key.search_path[key.search_path_index] {
                 // found the key, search the value for the NEXT element in the key
-                rem_key = InputSearchPair {
+                rem_key = ISP {
                     slice: rem_key.slice,
                     search_path: rem_key.search_path,
                     search_path_index: rem_key.search_path_index + 1,
@@ -267,7 +285,7 @@ fn key_value<'a, 'b>(
                 let (mut rem_val, val) = preceded(opt_space, value)(rem_eq)?;
 
                 //since we may come back to this in another iteration of the separated list that called it, we need to re increment the key for it's next loop
-                rem_val = InputSearchPair {
+                rem_val = ISP {
                     slice: rem_val.slice,
                     search_path: rem_val.search_path,
                     search_path_index: rem_val.search_path_index - 1,
@@ -284,79 +302,44 @@ fn key_value<'a, 'b>(
 }
 
 /// This should return a list the values at found paths
-fn search_hashmap<'a, 'b>(
-    input: InputSearchPair<'a, 'b>,
-) -> SkimResult<InputSearchPair<'a, 'b>, Vec<InputSearchPair<'a, 'b>>> {
+fn search_hashmap<'a, 'b>(input: ISP<'a, 'b>) -> SR<ISP<'a, 'b>, Vec<ISP<'a, 'b>>> {
     separated_list0(req_space, key_value)(input)
         .map(|(isp, vec)| (isp, vec.into_iter().flat_map(|opt| opt).collect::<Vec<_>>()))
 }
 
-pub fn search_document<'a, 'b>(
-    input: InputSearchPair<'a, 'b>,
-) -> SkimResult<InputSearchPair<'a, 'b>, Vec<InputSearchPair<'a, 'b>>> {
+pub fn search_document<'a, 'b>(input: ISP<'a, 'b>) -> SR<ISP<'a, 'b>, Vec<ISP<'a, 'b>>> {
     search_hashmap(input)
 }
 
 #[cfg(test)]
 mod tests {
-    use std::fs;
+    use std::fs::{self, File};
     use std::process::exit;
     use std::sync::Arc;
+
+    use memmap::Mmap;
 
     use super::*;
     #[test]
     fn search_document_test() {
-        let text = r###"version="Cepheus v3.4.5"
-        version_control_revision=95132
-        name="mp_Custodianship"
-        date="2230.12.01"
-        required_dlcs={
-            "Ancient Relics Story Pack"
-            "Anniversary Portraits"
-            "Apocalypse"
-            "Distant Stars Story Pack"
-            "Federations"
-            "Horizon Signal"
-            "Humanoids Species Pack"
-            "Leviathans Story Pack"
-            "Lithoids Species Pack"
-            "Megacorp"
-            "Necroids Species Pack"
-            "Nemesis"
-            "Overlord"
-            "Plantoids Species Pack"
-            "Synthetic Dawn Story Pack"
-            "Utopia"
-        }
-        player_portrait="sd_hum_robot"
-        flag={
-            icon={
-                category="human"
-                file="flag_human_8.dds"
-            }
-            background={
-                category="backgrounds"
-                file="00_solid.dds"
-            }
-            colors={
-                "blue"
-                "black"
-                "null"
-                "null"
-            }
-        }
-        meta_fleets=30
-        meta_planets=8
-        "###;
+        let filename =
+            "/home/michael/Dev/Stellarust/clausewitz-parser/production_data/3.4.5.95132/2290.03.05/gamestate";
+        let file = File::open(filename).expect("File not found");
 
-        let input = InputSearchPair::create(text, "flag.icon.category");
+        let mmap = unsafe { Mmap::map(&file).expect(&format!("Error mapping file {:?}", file)) };
+
+        let str = String::from_utf8_lossy(&mmap[..]);
+        let input = ISP::create(
+            &str,
+            "country.0.budget.current_month.income.country_base.energy",
+        );
         // let input = InputSearchPair::create(text, "flag.icon");//fails
 
         let (rem, opt) = search_document(input).unwrap();
         println!("{:?}", opt);
         assert!(!opt.is_empty());
         let expected = opt.first().unwrap();
-        assert_eq!(&"Custodianship", &expected.slice);
+        assert_eq!(&"25.5", &expected.slice);
     }
     use super::*;
 }

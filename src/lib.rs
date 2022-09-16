@@ -4,6 +4,7 @@ use chrono::NaiveDate;
 pub use clausewitz::{
     bracketed::key_value,
     root::root,
+    skim,
     val::{IndexError, Val},
 };
 
