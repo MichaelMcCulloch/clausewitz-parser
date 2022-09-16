@@ -19,21 +19,30 @@ fn main() {
         "country.0.budget.current_month.income.country_base.energy",
     );
     // let input = InputSearchPair::create(text, "flag.icon");//fails
+    let size_in_bytes = file.metadata().unwrap().size();
 
-    let (rem, opt) = search_document(input).unwrap();
-    println!("{:?}", opt);
-    assert!(!opt.is_empty());
-    let expected = opt.first().unwrap();
-    assert_eq!(&"25.5", &expected.slice);
+    let start_direct = Instant::now();
 
-    // let start = Instant::now();
+    let result = search_document(input);
 
-    // let result = root(&str);
+    let end_direct = start_direct.elapsed();
+    let speed = (size_in_bytes as u128 / end_direct.as_millis()) * 1000;
+    println!(
+        "{:?}MB/s, took {} ms.",
+        speed as f32 / 1000000 as f32,
+        end_direct.as_millis()
+    );
 
-    // let end = start.elapsed();
+    let start_direct = Instant::now();
+    let result = root(&str);
+    let end_direct = start_direct.elapsed();
 
-    // let size_in_bytes = file.metadata().unwrap().size();
-    // // let speed = (size_in_bytes as u128 / end.as_millis()) * 1000;
+    let speed = (size_in_bytes as u128 / end_direct.as_millis()) * 1000;
+    println!(
+        "{:?}MB/s, took {} ms.",
+        speed as f32 / 1000000 as f32,
+        end_direct.as_millis()
+    );
     // assert!(result.is_ok());
     // let succ = result.unwrap();
 
@@ -50,12 +59,6 @@ fn main() {
     //     clausewitz_parser::Val::Integer(_) => println!("Integer"),
     //     clausewitz_parser::Val::Identifier(_) => println!("Identifier"),
     // }
-
-    // println!(
-    //     "{:?}MB/s, took {} ms.",
-    //     speed as f32 / 1000000 as f32,
-    //     end.as_millis()
-    // );
 
     // println!("{}", _result.1);
 }
