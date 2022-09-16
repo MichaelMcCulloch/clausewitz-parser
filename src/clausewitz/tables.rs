@@ -1,10 +1,10 @@
-const fn string_litteral_content_table() -> [bool; 256] {
+pub const fn string_literal_content_table() -> [bool; 256] {
     let mut table = [true; 256];
     table[b'"' as usize] = false;
 
     table
 }
-const fn identifier_table() -> [bool; 256] {
+pub const fn identifier_table() -> [bool; 256] {
     let mut table = [false; 256];
     table[b'a' as usize] = true;
     table[b'b' as usize] = true;
@@ -74,7 +74,7 @@ const fn identifier_table() -> [bool; 256] {
     table
 }
 
-const fn token_table() -> [bool; 256] {
+pub const fn token_table() -> [bool; 256] {
     let mut table = [false; 256];
     table[b'=' as usize] = true;
     table[b'{' as usize] = true;
@@ -83,13 +83,13 @@ const fn token_table() -> [bool; 256] {
 }
 
 pub fn is_string_litteral_contents(char: char) -> bool {
-    string_litteral_content_table()[char as usize]
+    string_literal_content_table()[char as usize]
 }
 pub fn is_identifier_char(char: char) -> bool {
     identifier_table()[char as usize]
 }
 
-const fn space_table() -> [bool; 256] {
+pub const fn space_table() -> [bool; 256] {
     let mut table = [false; 256];
     table[b' ' as usize] = true;
     table[b'\n' as usize] = true;

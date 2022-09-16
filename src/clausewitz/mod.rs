@@ -12,6 +12,7 @@ pub(crate) mod simd;
 pub mod bracketed;
 pub(crate) mod quoted;
 pub mod root;
+pub mod skim;
 pub(crate) mod space;
 pub(crate) mod tables;
 pub(crate) mod unquoted;

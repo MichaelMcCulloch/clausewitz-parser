@@ -29,9 +29,9 @@ mod file_test {
 
         let result = root(&str);
 
-        // assert!(result.is_ok());
-        let r = result.err().unwrap();
-        println!("{}", &r.to_string()[0..100]);
+        assert!(result.is_ok());
+        let r = result.ok().unwrap();
+        println!("{}", r.0.is_empty());
         // assert!(r.is_empty())
     }
 }
