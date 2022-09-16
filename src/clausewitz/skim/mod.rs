@@ -350,6 +350,7 @@ mod tests {
         "###;
 
         let input = InputSearchPair::create(text, "flag.icon.category");
+        // let input = InputSearchPair::create(text, "flag.icon");//fails
 
         let (rem, opt) = search_document(input).unwrap();
         println!("{:?}", opt);
