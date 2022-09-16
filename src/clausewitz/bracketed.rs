@@ -3,8 +3,10 @@ use nom::{
     bytes::complete::take,
     character::complete::{char, digit1},
     combinator::{cut, map, map_res, recognize, verify},
+    error::ParseError,
     multi::separated_list0,
-    sequence::{delimited, preceded, separated_pair, tuple},
+    sequence::{delimited, pair, preceded, separated_pair, tuple},
+    IResult, Parser,
 };
 
 use super::{
@@ -83,31 +85,50 @@ pub fn set<'a>(input: &'a str) -> Res<&'a str, Val<'a>> {
 pub fn set_of_collections<'a>(input: &'a str) -> Res<&'a str, Val<'a>> {
     map(separated_list0(req_space, bracketed), |vals| Val::Set(vals))(input)
 }
+
+pub fn triple<I, O1, O2, O3, E: ParseError<I>, F, G, H>(
+    mut first: F,
+    mut second: G,
+    mut third: H,
+) -> impl FnMut(I) -> IResult<I, (O1, O2, O3), E>
+where
+    F: Parser<I, O1, E>,
+    G: Parser<I, O2, E>,
+    H: Parser<I, O3, E>,
+{
+    move |input: I| {
+        let (input, o1) = first.parse(input)?;
+        let (input, o2) = second.parse(input)?;
+        third.parse(input).map(|(i, o3)| (i, (o1, o2, o3)))
+    }
+}
 pub fn contents<'a>(input: &'a str) -> Res<&'a str, Val<'a>> {
-    let (remainder, maybe_key_number_identifier): (&'a str, &'a str) = take_simd_not_token(input)?;
+    let (_remainder, (maybe_key_number_identifier, next_token)) =
+        pair(take_simd_not_token, take(1 as usize))(input)?;
 
-    let (_remainder, next_token) = take(1 as usize)(remainder)?;
+    match next_token {
+        "}" => cut(set)(input),
+        "=" | "{" => {
+            match (
+                next_token,
+                take_simd_identifier(maybe_key_number_identifier)
+                    .map(|s| s.1.parse::<i64>().is_ok())
+                    .unwrap_or(false),
+            ) {
+                ("=", true) => cut(array)(input),
+                ("=", false) => cut(dict)(input),
+                ("{", true) => cut(numbered_dict)(input),
+                ("{", false) => cut(set_of_collections)(input),
+                (_, _) => {
+                    panic!()
+                }
+            }
+        }
 
-    if next_token == "}" {
-        return cut(set)(input);
-    } else if next_token == "=" {
-        let (_rem, maybe_ident) = take_simd_identifier(maybe_key_number_identifier)?;
-        return if let Ok(_) = maybe_ident.parse::<i64>() {
-            cut(array)(input)
-        } else {
-            cut(dict)(input)
-        };
-    } else if next_token == "{" {
-        return if integer(maybe_key_number_identifier).is_ok() {
-            cut(numbered_dict)(input)
-        } else {
-            cut(set_of_collections)(input)
-        };
-    } else {
-        println!("AFTER: {}", input);
-        println!("{}", next_token);
-        panic!("Token = or }} not found, possibly missing a closing brace somewhere?")
-    };
+        _ => {
+            panic!()
+        }
+    }
 }
 
 pub fn bracketed<'a>(input: &'a str) -> Res<&'a str, Val<'a>> {

@@ -120,6 +120,13 @@ pub fn bracketed<'a, 'b>(input: ISP<'a, 'b>) -> SR<ISP<'a, 'b>, Vec<ISP<'a, 'b>>
         char('}'),
     )(input)
 }
+pub fn term_bracketed<'a, 'b>(input: ISP<'a, 'b>) -> SR<ISP<'a, 'b>, Vec<ISP<'a, 'b>>> {
+    delimited(
+        char('{'),
+        cut(delimited(opt_space, contents, opt_space)),
+        char('}'),
+    )(input)
+}
 
 pub fn set<'a, 'b>(input: ISP<'a, 'b>) -> SR<ISP<'a, 'b>, Vec<ISP<'a, 'b>>> {
     alt((
@@ -136,26 +143,32 @@ pub fn number_value<'a, 'b>(input: ISP<'a, 'b>) -> SR<ISP<'a, 'b>, Vec<ISP<'a, '
         verify(recognize(digit1), |isp: &ISP| !isp.slice.is_empty()),
     )(input)?;
 
-    if number.slice == number.search_path[number.search_path_index] {
-        rem_number = ISP {
-            slice: rem_number.slice,
-            search_path: rem_number.search_path,
-            search_path_index: rem_number.search_path_index + 1,
-        };
-        let (rem_eq, _) = cut(preceded(opt_space, char('=')))(rem_number)?;
-        let (mut rem_val, val) = preceded(opt_space, value)(rem_eq)?;
+    if number.search_path_index < 10 {
+        if number.slice == number.search_path[number.search_path_index] {
+            rem_number = ISP {
+                slice: rem_number.slice,
+                search_path: rem_number.search_path,
+                search_path_index: rem_number.search_path_index + 1,
+            };
+            let (rem_eq, _) = cut(preceded(opt_space, char('=')))(rem_number)?;
+            let (mut rem_val, val) = preceded(opt_space, value)(rem_eq)?;
 
-        //since we may come back to this in another iteration of the separated list that called it, we need to re increment the key for it's next loop
-        rem_val = ISP {
-            slice: rem_val.slice,
-            search_path: rem_val.search_path,
-            search_path_index: rem_val.search_path_index - 1,
-        };
-        Ok((rem_val, val))
+            //since we may come back to this in another iteration of the separated list that called it, we need to re increment the key for it's next loop
+            rem_val = ISP {
+                slice: rem_val.slice,
+                search_path: rem_val.search_path,
+                search_path_index: rem_val.search_path_index - 1,
+            };
+            Ok((rem_val, val))
+        } else {
+            let (rem_eq, _) = cut(preceded(opt_space, char('=')))(rem_number)?;
+            let (rem_val, _) = preceded(opt_space, value)(rem_eq)?;
+            Ok((rem_val, vec![]))
+        }
     } else {
         let (rem_eq, _) = cut(preceded(opt_space, char('=')))(rem_number)?;
-        let (rem_val, _) = preceded(opt_space, value)(rem_eq)?;
-        Ok((rem_val, vec![]))
+        let (rem_val, val) = preceded(opt_space, value)(rem_eq)?;
+        Ok((rem_val, val))
     }
 }
 
@@ -274,27 +287,34 @@ fn not_token<'a, 'b>(input: ISP<'a, 'b>) -> SR<ISP<'a, 'b>, ISP<'a, 'b>> {
 fn key_value<'a, 'b>(input: ISP<'a, 'b>) -> SR<ISP<'a, 'b>, Vec<ISP<'a, 'b>>> {
     match preceded(opt_space, key)(input) {
         Ok((mut rem_key, key)) => {
-            if key.slice == key.search_path[key.search_path_index] {
-                // found the key, search the value for the NEXT element in the key
-                rem_key = ISP {
-                    slice: rem_key.slice,
-                    search_path: rem_key.search_path,
-                    search_path_index: rem_key.search_path_index + 1,
-                };
-                let (rem_eq, _) = cut(preceded(opt_space, char('=')))(rem_key)?;
-                let (mut rem_val, val) = preceded(opt_space, value)(rem_eq)?;
+            if key.search_path_index < 10 {
+                if key.slice == key.search_path[key.search_path_index] {
+                    // found the key, search the value for the NEXT element in the key
+                    rem_key = ISP {
+                        slice: rem_key.slice,
+                        search_path: rem_key.search_path,
+                        search_path_index: rem_key.search_path_index + 1,
+                    };
+                    let (rem_eq, _) = cut(preceded(opt_space, char('=')))(rem_key)?;
+                    let (mut rem_val, val) = preceded(opt_space, value)(rem_eq)?;
 
-                //since we may come back to this in another iteration of the separated list that called it, we need to re increment the key for it's next loop
-                rem_val = ISP {
-                    slice: rem_val.slice,
-                    search_path: rem_val.search_path,
-                    search_path_index: rem_val.search_path_index - 1,
-                };
-                Ok((rem_val, val))
+                    //since we may come back to this in another iteration of the separated list that called it, we need to re increment the key for it's next loop
+                    rem_val = ISP {
+                        slice: rem_val.slice,
+                        search_path: rem_val.search_path,
+                        search_path_index: rem_val.search_path_index - 1,
+                    };
+                    Ok((rem_val, val))
+                } else {
+                    let (rem_eq, eq) = cut(preceded(opt_space, char('=')))(rem_key)?;
+                    let (rem_val, val) = preceded(opt_space, value)(rem_eq)?;
+                    Ok((rem_val, vec![]))
+                }
             } else {
                 let (rem_eq, eq) = cut(preceded(opt_space, char('=')))(rem_key)?;
                 let (rem_val, val) = preceded(opt_space, value)(rem_eq)?;
-                Ok((rem_val, vec![]))
+
+                Ok((rem_val, val))
             }
         }
         Err(e) => Err(e),
@@ -329,13 +349,28 @@ mod tests {
         let mmap = unsafe { Mmap::map(&file).expect(&format!("Error mapping file {:?}", file)) };
 
         let str = String::from_utf8_lossy(&mmap[..]);
-        let input = ISP::create(
-            &str,
-            "country.0.budget.current_month.income.country_base.energy",
-        );
+        let input = ISP::create(&str, "country.0.budget.current_month.income.country_base");
         // let input = InputSearchPair::create(text, "flag.icon");//fails
 
         let (rem, opt) = search_document(input).unwrap();
+        println!("{:?}", opt);
+        assert!(!opt.is_empty());
+        let expected = opt.first().unwrap();
+        assert_eq!(&"25.5", &expected.slice);
+    }
+
+    #[test]
+    fn asdf() {
+        let str = r###"country = {
+            1 = one
+            2 = two
+        }"###;
+        let input = ISP::create(&str, "country");
+        // let input = InputSearchPair::create(text, "flag.icon");//fails
+
+        let res = search_document(input);
+
+        let (rem, opt) = res.unwrap();
         println!("{:?}", opt);
         assert!(!opt.is_empty());
         let expected = opt.first().unwrap();
