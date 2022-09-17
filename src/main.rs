@@ -1,4 +1,9 @@
-use std::{fs::File, os::unix::prelude::MetadataExt, time::Instant};
+use std::{
+    fs::File,
+    os::unix::prelude::MetadataExt,
+    thread,
+    time::{Duration, Instant},
+};
 
 use clausewitz_parser::{
     root,
@@ -32,17 +37,23 @@ fn main() {
         speed as f32 / 1000000 as f32,
         end_direct.as_millis()
     );
+    thread::sleep(Duration::from_secs(10));
 
-    let start_direct = Instant::now();
+    drop(result);
+
+    let start_parse = Instant::now();
     let result = root(&str);
-    let end_direct = start_direct.elapsed();
 
-    let speed = (size_in_bytes as u128 / end_direct.as_millis()) * 1000;
+    let end_parse = start_parse.elapsed();
+
+    let speed = (size_in_bytes as u128 / end_parse.as_millis()) * 1000;
     println!(
         "{:?}MB/s, took {} ms.",
         speed as f32 / 1000000 as f32,
-        end_direct.as_millis()
+        end_parse.as_millis()
     );
+    thread::sleep(Duration::from_secs(10));
+    drop(result);
     // assert!(result.is_ok());
     // let succ = result.unwrap();
 

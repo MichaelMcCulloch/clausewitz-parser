@@ -108,7 +108,7 @@ pub fn contents<'a>(input: &'a str) -> Res<&'a str, Val<'a>> {
 
     match next_token {
         "}" => cut(set)(input),
-        "=" | "{" => {
+        _ => {
             match (
                 next_token,
                 take_simd_identifier(maybe_key_number_identifier)
@@ -123,10 +123,6 @@ pub fn contents<'a>(input: &'a str) -> Res<&'a str, Val<'a>> {
                     panic!()
                 }
             }
-        }
-
-        _ => {
-            panic!()
         }
     }
 }
