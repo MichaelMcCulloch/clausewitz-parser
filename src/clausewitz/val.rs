@@ -4,23 +4,80 @@ use std::{
 };
 
 use chrono::{Datelike, NaiveDate};
-use serde::{ser::SerializeTuple, Serializer};
-use serde_derive::Serialize;
+use serde::{
+    ser::{SerializeMap, SerializeSeq, SerializeTuple},
+    Serialize, Serializer,
+};
 
 use crate::ClausewitzValue;
 
-#[derive(Debug, Clone, PartialEq, Serialize)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Val<'a> {
     Dict(Vec<(&'a str, Val<'a>)>),
     NumberedDict(i64, Vec<(&'a str, Val<'a>)>),
     Array(Vec<Val<'a>>),
     Set(Vec<Val<'a>>),
     StringLiteral(&'a str),
-    #[serde(serialize_with = "serialize_naive_date")]
+    // #[serde(serialize_with = "serialize_naive_date")]
     Date(NaiveDate),
     Decimal(f64),
     Integer(i64),
     Identifier(&'a str),
+}
+
+impl<'a> Serialize for Val<'a> {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            Val::Dict(seq) => serialize_dict(seq, serializer),
+            Val::NumberedDict(n, seq) => {
+                let mut tup = serializer.serialize_tuple(2)?;
+                tup.serialize_element(n)?;
+                tup.serialize_element(&Val::Dict(seq.clone()))?;
+                tup.end()
+            }
+            Val::Array(arr) => serialize_array(arr, serializer),
+            Val::Set(set) => serialize_set(set, serializer),
+            Val::StringLiteral(str) => serializer.serialize_str(str),
+            Val::Date(date) => serialize_naive_date(date, serializer),
+            Val::Decimal(dec) => serializer.serialize_f64(*dec),
+            Val::Integer(int) => serializer.serialize_i64(*int),
+            Val::Identifier(id) => serializer.serialize_str(id),
+        }
+    }
+}
+
+fn serialize_dict<S>(dict: &Vec<(&str, Val)>, serializer: S) -> Result<S::Ok, S::Error>
+where
+    S: Serializer,
+{
+    let mut map = serializer.serialize_map(Some(dict.len()))?;
+    for (k, v) in dict {
+        map.serialize_entry(k, v)?;
+    }
+    map.end()
+}
+fn serialize_set<S>(set: &Vec<Val>, serializer: S) -> Result<S::Ok, S::Error>
+where
+    S: Serializer,
+{
+    let mut map = serializer.serialize_tuple(set.len())?;
+    for v in set {
+        map.serialize_element(v)?;
+    }
+    map.end()
+}
+fn serialize_array<S>(arr: &Vec<Val>, serializer: S) -> Result<S::Ok, S::Error>
+where
+    S: Serializer,
+{
+    let mut seq = serializer.serialize_seq(Some(arr.len()))?;
+    for e in arr {
+        seq.serialize_element(e)?;
+    }
+    seq.end()
 }
 
 pub fn serialize_naive_date<S>(date: &NaiveDate, ser: S) -> Result<S::Ok, S::Error>
