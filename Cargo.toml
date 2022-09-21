@@ -10,6 +10,8 @@ nom = "7.1.1"
 chrono = "0.4.22"
 anyhow = "1.0.53"
 memmap = "0.7.0"
+serde = "1.0.144"
+serde_derive = "1.0.144"
 
 [dev-dependencies]
 

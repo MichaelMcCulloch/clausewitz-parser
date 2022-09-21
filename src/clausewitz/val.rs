@@ -3,22 +3,36 @@ use std::{
     fmt::{self, Debug, Display, Formatter},
 };
 
-use chrono::NaiveDate;
+use chrono::{Datelike, NaiveDate};
+use serde::{ser::SerializeTuple, Serializer};
+use serde_derive::Serialize;
 
 use crate::ClausewitzValue;
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 pub enum Val<'a> {
     Dict(Vec<(&'a str, Val<'a>)>),
     NumberedDict(i64, Vec<(&'a str, Val<'a>)>),
     Array(Vec<Val<'a>>),
     Set(Vec<Val<'a>>),
     StringLiteral(&'a str),
-
+    #[serde(serialize_with = "serialize_naive_date")]
     Date(NaiveDate),
     Decimal(f64),
     Integer(i64),
     Identifier(&'a str),
+}
+
+pub fn serialize_naive_date<S>(date: &NaiveDate, ser: S) -> Result<S::Ok, S::Error>
+where
+    S: Serializer,
+{
+    let val = (date.year(), date.month(), date.day());
+    let mut state = ser.serialize_tuple(3)?;
+    state.serialize_element(&val.0)?;
+    state.serialize_element(&val.1)?;
+    state.serialize_element(&val.2)?;
+    state.end()
 }
 
 #[derive(Debug, PartialEq)]
