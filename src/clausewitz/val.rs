@@ -253,6 +253,19 @@ impl<'a> ClausewitzValue<'a> for Val<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test____() {
+        let s = std::fs::read_to_string(
+            "/home/michael/Dev/Stellarust/stellarust5/production_data/gamestate",
+        )
+        .unwrap();
+        let gamestate = crate::root(&s).unwrap().1;
+        print!(
+            "{}",
+            serde_json::to_string_pretty(gamestate.get_at_path("country.1").unwrap()).unwrap()
+        )
+    }
     #[test]
     fn val_dict__given_key__returns_val_result() {
         let val = Val::Dict(vec![("key", Val::Integer(10))]);

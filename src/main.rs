@@ -6,7 +6,7 @@ use std::{
 };
 
 use clausewitz_parser::{
-    root,
+    par_root, root,
     skim::{isp::ISP, search_document},
     ClausewitzValue,
 };
@@ -42,7 +42,7 @@ fn main() {
     drop(result);
 
     let start_parse = Instant::now();
-    let result = root(&str);
+    let result = par_root(&str, "\n}\n");
 
     let end_parse = start_parse.elapsed();
 

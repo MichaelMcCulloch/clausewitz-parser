@@ -1,4 +1,7 @@
-use nom::combinator::map;
+use std::time::Duration;
+
+use nom::{combinator::map, FindSubstring};
+use rayon::prelude::{IntoParallelRefIterator, ParallelIterator};
 
 use super::{bracketed::hash_map, val::Val, Res};
 
@@ -6,12 +9,53 @@ pub fn root<'a>(input: &'a str) -> Res<&'a str, Val<'a>> {
     map(hash_map, Val::Dict)(input)
 }
 
-//Just a bit sloppy
+pub fn par_root<'a, 'b>(input: &'a str, delimiter: &'b str) -> Res<&'a str, Val<'a>> {
+    let mut indices = vec![];
+    let mut after = input;
+    while let Some(index) = after.find_substring(delimiter) {
+        let split = after.split_at(index + 3);
+
+        indices.push(split.0);
+        after = split.1;
+    }
+    indices.push(after);
+
+    let res = Val::Dict(
+        indices
+            .par_iter()
+            .filter_map(|string| match root(string) {
+                Ok((_, Val::Dict(dict))) => Some(dict),
+                Ok(_) => None,
+                Err(_) => None,
+            })
+            .flat_map(|v| v)
+            .collect(),
+    );
+    let res = Ok(("", res));
+
+    res
+}
 
 #[cfg(test)]
 mod tests {
     use crate::{clausewitz::tests::helper::assert_result_ok, key_value};
+    #[test]
+    fn root__key_identifier_pairs__ok() {
+        let text = r###"dict={
+    alpha=a
+    beta=b
+    cthulhu=ilhjok
+}
+dict2={
+    charlie=a
+    delta=b
+    zoo=ilhjok
+}"###;
 
+        let result = par_root(&text, "\n}\n");
+
+        assert_result_ok(result);
+    }
     use super::*;
     #[test]
     fn basics() {
@@ -166,24 +210,6 @@ mod tests {
             }"###;
 
         let result = root(text);
-        assert_result_ok(result);
-    }
-
-    #[test]
-    fn root__key_identifier_pairs__ok() {
-        let text = r###"dict={
-    alpha=a
-    beta=b
-    cthulhu=ilhjok
-}
-dict2={
-    charlie=a
-    delta=b
-    zoo=ilhjok
-}"###;
-
-        let result = root(&text);
-
         assert_result_ok(result);
     }
 }
