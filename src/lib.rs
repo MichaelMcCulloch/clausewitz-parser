@@ -3,7 +3,7 @@ mod clausewitz;
 use chrono::NaiveDate;
 pub use clausewitz::{
     bracketed::key_value,
-    root::{root, skip_par_root},
+    root::{cheat_root, root},
     skim,
     val::{IndexError, Val},
 };

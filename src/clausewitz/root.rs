@@ -9,10 +9,10 @@ pub fn root<'a>(input: &'a str) -> Res<&'a str, Val<'a>> {
     map(hash_map, Val::Dict)(input)
 }
 
-pub fn skip_par_root<'a, 'b>(input: &'a str, delimiter: &'b str) -> Res<&'a str, Val<'a>> {
+pub fn cheat_root<'a>(input: &'a str) -> Res<&'a str, Val<'a>> {
     let mut indices = vec![];
     let mut after = input;
-    while let Some(index) = after.find_substring(delimiter) {
+    while let Some(index) = after.find_substring("\n}\n") {
         let split = after.split_at(index + 3);
 
         indices.push(split.0);
@@ -61,7 +61,7 @@ dict2={
     zoo=ilhjok
 }"###;
 
-        let result = skip_par_root(&text, "\n}\n");
+        let result = cheat_root(&text);
 
         assert_result_ok(result);
     }
