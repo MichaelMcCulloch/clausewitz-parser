@@ -6,9 +6,9 @@ use std::{
 };
 
 use clausewitz_parser::{
-    par_root, root,
+    root,
     skim::{isp::ISP, search_document},
-    ClausewitzValue,
+    skip_par_root, ClausewitzValue,
 };
 use memmap::Mmap;
 
@@ -37,12 +37,12 @@ fn main() {
         speed as f32 / 1000000 as f32,
         end_direct.as_millis()
     );
-    thread::sleep(Duration::from_secs(10));
+    // thread::sleep(Duration::from_secs(10));
 
     drop(result);
 
     let start_parse = Instant::now();
-    let result = par_root(&str, "\n}\n");
+    let result = skip_par_root(&str, "\n}\n");
 
     let end_parse = start_parse.elapsed();
 
@@ -52,7 +52,7 @@ fn main() {
         speed as f32 / 1000000 as f32,
         end_parse.as_millis()
     );
-    thread::sleep(Duration::from_secs(10));
+    // thread::sleep(Duration::from_secs(10));
     drop(result);
     // assert!(result.is_ok());
     // let succ = result.unwrap();

@@ -9,7 +9,7 @@ pub fn root<'a>(input: &'a str) -> Res<&'a str, Val<'a>> {
     map(hash_map, Val::Dict)(input)
 }
 
-pub fn par_root<'a, 'b>(input: &'a str, delimiter: &'b str) -> Res<&'a str, Val<'a>> {
+pub fn skip_par_root<'a, 'b>(input: &'a str, delimiter: &'b str) -> Res<&'a str, Val<'a>> {
     let mut indices = vec![];
     let mut after = input;
     while let Some(index) = after.find_substring(delimiter) {
@@ -23,10 +23,19 @@ pub fn par_root<'a, 'b>(input: &'a str, delimiter: &'b str) -> Res<&'a str, Val<
     let res = Val::Dict(
         indices
             .par_iter()
-            .filter_map(|string| match root(string) {
-                Ok((_, Val::Dict(dict))) => Some(dict),
-                Ok(_) => None,
-                Err(_) => None,
+            .filter_map(|string| {
+                if string.starts_with("version=")
+                    || string.starts_with("player=")
+                    || string.starts_with("country=")
+                {
+                    match root(string) {
+                        Ok((_, Val::Dict(dict))) => Some(dict),
+                        Ok(_) => None,
+                        Err(_) => None,
+                    }
+                } else {
+                    None
+                }
             })
             .flat_map(|v| v)
             .collect(),
@@ -52,7 +61,7 @@ dict2={
     zoo=ilhjok
 }"###;
 
-        let result = par_root(&text, "\n}\n");
+        let result = skip_par_root(&text, "\n}\n");
 
         assert_result_ok(result);
     }
