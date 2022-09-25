@@ -8,6 +8,7 @@ use nom::{
 
 use super::{quoted::map_to_date, simd::take_simd_identifier, tables::is_digit, val::Val, Res};
 
+#[inline(always)]
 pub fn date<'a>(input: &'a str) -> Res<&'a str, Val<'a>> {
     map(
         map_res(
@@ -17,6 +18,7 @@ pub fn date<'a>(input: &'a str) -> Res<&'a str, Val<'a>> {
         |date: NaiveDate| Val::Date(date),
     )(input)
 }
+#[inline(always)]
 pub fn decimal<'a>(input: &'a str) -> Res<&'a str, Val<'a>> {
     map(
         map_res(
@@ -27,6 +29,7 @@ pub fn decimal<'a>(input: &'a str) -> Res<&'a str, Val<'a>> {
     )(input)
 }
 
+#[inline(always)]
 pub fn int<'a>(input: &'a str) -> Res<&'a str, i64> {
     map_res(
         verify(recognize(tuple((opt(char('-')), digit1))), |s: &str| {
@@ -36,10 +39,12 @@ pub fn int<'a>(input: &'a str) -> Res<&'a str, i64> {
     )(input)
 }
 
+#[inline(always)]
 pub fn integer<'a>(input: &'a str) -> Res<&'a str, Val<'a>> {
     map(int, |integer: i64| Val::Integer(integer))(input)
 }
 
+#[inline(always)]
 pub fn identifier<'a>(input: &'a str) -> Res<&'a str, Val<'a>> {
     map(
         verify(take_simd_identifier, |s: &str| {
@@ -50,6 +55,7 @@ pub fn identifier<'a>(input: &'a str) -> Res<&'a str, Val<'a>> {
 }
 use nom::branch::alt;
 
+#[inline(always)]
 pub fn unquoted<'a>(input: &'a str) -> Res<&'a str, Val<'a>> {
     alt((date, decimal, integer, identifier))(input)
 }

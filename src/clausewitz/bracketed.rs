@@ -19,20 +19,24 @@ use super::{
     Res,
 };
 
+#[inline(always)]
 pub fn unquoted_key<'a>(input: &'a str) -> Res<&'a str, &'a str> {
     verify(take_simd_identifier, |s: &str| {
         !s.is_empty() //&& !(is_digit(s.chars().next().unwrap()))
     })(input)
 }
 
+#[inline(always)]
 pub fn quoted_key<'a>(input: &'a str) -> Res<&'a str, &'a str> {
     delimited(char('\"'), string_literal_contents, char('\"'))(input)
 }
 
+#[inline(always)]
 pub fn key<'a>(input: &'a str) -> Res<&'a str, &'a str> {
     alt((unquoted_key, quoted_key))(input)
 }
 
+#[inline(always)]
 pub fn key_value<'a>(input: &'a str) -> Res<&'a str, (&'a str, Val<'a>)> {
     separated_pair(
         preceded(opt_space, key),
@@ -41,14 +45,17 @@ pub fn key_value<'a>(input: &'a str) -> Res<&'a str, (&'a str, Val<'a>)> {
     )(input)
 }
 
+#[inline(always)]
 pub fn hash_map<'a>(input: &'a str) -> Res<&'a str, Vec<(&'a str, Val<'a>)>> {
     separated_list0(req_space, key_value)(input)
 }
 
+#[inline(always)]
 pub fn dict<'a>(input: &'a str) -> Res<&'a str, Val<'a>> {
     map(hash_map, Val::Dict)(input)
 }
 
+#[inline(always)]
 pub fn number_value<'a>(input: &'a str) -> Res<&'a str, (usize, Val<'a>)> {
     separated_pair(
         preceded(
@@ -63,6 +70,7 @@ pub fn number_value<'a>(input: &'a str) -> Res<&'a str, (usize, Val<'a>)> {
     )(input)
 }
 
+#[inline(always)]
 pub fn array<'a>(input: &'a str) -> Res<&'a str, Val<'a>> {
     map(
         separated_list0(req_space, number_value),
@@ -70,11 +78,13 @@ pub fn array<'a>(input: &'a str) -> Res<&'a str, Val<'a>> {
     )(input)
 }
 
+#[inline(always)]
 pub fn fold_into_array<'a>(mut tuple_vec: Vec<(usize, Val<'a>)>) -> Vec<Val<'a>> {
     tuple_vec.sort_by(|(a_index, _), (b_index, _)| a_index.partial_cmp(b_index).unwrap());
     tuple_vec.into_iter().map(|(_, val)| val).collect()
 }
 
+#[inline(always)]
 pub fn set<'a>(input: &'a str) -> Res<&'a str, Val<'a>> {
     alt((
         map(separated_list0(req_space, value), |s: Vec<Val>| Val::Set(s)),
@@ -82,10 +92,12 @@ pub fn set<'a>(input: &'a str) -> Res<&'a str, Val<'a>> {
     ))(input)
 }
 
+#[inline(always)]
 pub fn set_of_collections<'a>(input: &'a str) -> Res<&'a str, Val<'a>> {
     map(separated_list0(req_space, bracketed), |vals| Val::Set(vals))(input)
 }
 
+#[inline(always)]
 pub fn triple<I, O1, O2, O3, E: ParseError<I>, F, G, H>(
     mut first: F,
     mut second: G,
@@ -102,6 +114,7 @@ where
         third.parse(input).map(|(i, o3)| (i, (o1, o2, o3)))
     }
 }
+#[inline(always)]
 pub fn contents<'a>(input: &'a str) -> Res<&'a str, Val<'a>> {
     let (_remainder, (maybe_key_number_identifier, next_token)) =
         pair(take_simd_not_token, take(1 as usize))(input)?;
@@ -127,6 +140,7 @@ pub fn contents<'a>(input: &'a str) -> Res<&'a str, Val<'a>> {
     }
 }
 
+#[inline(always)]
 pub fn bracketed<'a>(input: &'a str) -> Res<&'a str, Val<'a>> {
     delimited(
         char('{'),
@@ -135,6 +149,7 @@ pub fn bracketed<'a>(input: &'a str) -> Res<&'a str, Val<'a>> {
     )(input)
 }
 
+#[inline(always)]
 pub fn numbered_dict<'a>(input: &'a str) -> Res<&'a str, Val<'a>> {
     map(
         tuple((

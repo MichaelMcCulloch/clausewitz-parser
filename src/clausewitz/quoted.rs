@@ -24,6 +24,7 @@ impl Display for DateParseError {
     }
 }
 
+#[inline(always)]
 pub fn date<'a>(input: &'a str) -> Res<&'a str, Val<'a>> {
     map(
         map_res(
@@ -34,6 +35,7 @@ pub fn date<'a>(input: &'a str) -> Res<&'a str, Val<'a>> {
     )(input)
 }
 
+#[inline(always)]
 pub fn map_to_date<'a>(s: &'a str) -> anyhow::Result<NaiveDate> {
     let parts: Vec<&'a str> = s.split(".").collect();
 
@@ -63,14 +65,17 @@ pub fn map_to_date<'a>(s: &'a str) -> anyhow::Result<NaiveDate> {
     })
 }
 
+#[inline(always)]
 pub fn string_literal_contents<'a>(input: &'a str) -> Res<&'a str, &'a str> {
     take_simd_string_literal(input)
 }
 
+#[inline(always)]
 pub fn string_literal<'a>(input: &'a str) -> Res<&'a str, Val<'a>> {
     map(string_literal_contents, |s: &str| Val::StringLiteral(s))(input)
 }
 
+#[inline(always)]
 pub fn quoted<'a>(input: &'a str) -> Res<&'a str, Val<'a>> {
     delimited(char('\"'), cut(alt((date, string_literal))), char('\"'))(input)
 }

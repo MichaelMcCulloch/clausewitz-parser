@@ -1,10 +1,10 @@
 use super::{simd::take_simd_space, Res};
 use nom::combinator::verify;
-
+#[inline(always)]
 pub fn opt_space<'a>(input: &'a str) -> Res<&'a str, &'a str> {
     take_simd_space(input)
 }
-
+#[inline(always)]
 pub fn req_space<'a>(input: &'a str) -> Res<&'a str, &'a str> {
     verify(opt_space, |spaces: &str| !spaces.is_empty())(input)
 }

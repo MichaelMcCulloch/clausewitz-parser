@@ -31,21 +31,28 @@ use nom::error::{ParseError, VerboseError};
 use super::tables::{is_identifier_char, is_space, is_string_litteral_contents, is_token};
 use super::Res;
 
+#[inline(always)]
 pub fn take_simd_identifier<'a>(input: &'a str) -> Res<&'a str, &'a str> {
     take_while_simd::<'a, _, VerboseError<&'a str>>(is_identifier_char, IDENTIFIER_RANGES)(input)
 }
+
+#[inline(always)]
 pub fn take_simd_string_literal<'a>(input: &'a str) -> Res<&'a str, &'a str> {
     take_while_simd::<'a, _, VerboseError<&'a str>>(
         is_string_litteral_contents,
         STRING_LITTERAL_CONTENT_RANGES,
     )(input)
 }
+
+#[inline(always)]
 pub fn take_simd_not_token<'a>(input: &'a str) -> Res<&'a str, &'a str> {
     take_while_simd::<'a, _, VerboseError<&'a str>>(
         move |character| !is_token(character),
         NOT_TOKEN_RANGES,
     )(input)
 }
+
+#[inline(always)]
 pub fn take_simd_space<'a>(input: &'a str) -> Res<&'a str, &'a str> {
     take_while_simd::<'a, _, VerboseError<&'a str>>(
         move |character| is_space(character),
@@ -53,6 +60,7 @@ pub fn take_simd_space<'a>(input: &'a str) -> Res<&'a str, &'a str> {
     )(input)
 }
 
+#[inline(always)]
 fn take_while_simd<'a, Condition, Error: ParseError<&'a str>>(
     cond: Condition,
     ranges: &'static [u8; CHUNK_SIZE],
@@ -71,7 +79,7 @@ where
         }
     }
 }
-
+#[inline(always)]
 fn simd_loop16<'a>(str: &'a str, ranges: &[u8; CHUNK_SIZE]) -> Res<&'a str, &'a str> {
     let start = str.as_ptr() as usize;
     let mut i = str.as_ptr() as usize;

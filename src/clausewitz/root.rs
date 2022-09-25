@@ -4,11 +4,11 @@ use nom::{combinator::map, FindSubstring};
 use rayon::prelude::{IntoParallelRefIterator, ParallelIterator};
 
 use super::{bracketed::hash_map, val::Val, Res};
-
+#[inline(always)]
 pub fn root<'a>(input: &'a str) -> Res<&'a str, Val<'a>> {
     map(hash_map, Val::Dict)(input)
 }
-
+#[inline(always)]
 pub fn cheat_root<'a>(input: &'a str) -> Res<&'a str, Val<'a>> {
     let mut indices = vec![];
     let mut after = input;
@@ -22,7 +22,7 @@ pub fn cheat_root<'a>(input: &'a str) -> Res<&'a str, Val<'a>> {
 
     let res = Val::Dict(
         indices
-            .par_iter()
+            .iter()
             .filter_map(|string| {
                 if string.starts_with("version=")
                     || string.starts_with("player=")
