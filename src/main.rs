@@ -27,7 +27,7 @@ fn main() {
     let count = 10;
     for _ in 0..count {
         let start_parse = Instant::now();
-        let _ = cheat_root(&str);
+        let _ = cheat_root(&str, vec!["version", "player", "country", "fleet", "ships"]);
 
         let end_parse = start_parse.elapsed();
 

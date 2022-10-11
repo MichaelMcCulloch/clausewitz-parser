@@ -8,8 +8,9 @@ use super::{bracketed::hash_map, val::Val, Res};
 pub fn root<'a>(input: &'a str) -> Res<&'a str, Val<'a>> {
     map(hash_map, Val::Dict)(input)
 }
+
 #[inline(always)]
-pub fn cheat_root<'a>(input: &'a str) -> Res<&'a str, Val<'a>> {
+pub fn cheat_root<'a, 'b>(input: &'a str, keys: Vec<&'b str>) -> Res<&'a str, Val<'a>> {
     let mut indices = vec![];
     let mut after = input;
     while let Some(index) = after.find_substring("\n}\n") {
@@ -24,9 +25,9 @@ pub fn cheat_root<'a>(input: &'a str) -> Res<&'a str, Val<'a>> {
         indices
             .iter()
             .filter_map(|string| {
-                if string.starts_with("version=")
-                    || string.starts_with("player=")
-                    || string.starts_with("country=")
+                if keys
+                    .iter()
+                    .any(|k| string.starts_with(format!("{}=", k).as_str()))
                 {
                     match root(string) {
                         Ok((_, Val::Dict(dict))) => Some(dict),
@@ -61,7 +62,10 @@ dict2={
     zoo=ilhjok
 }"###;
 
-        let result = cheat_root(&text);
+        let result = cheat_root(
+            &text,
+            vec!["version", "player", "country", "fleet", "ships"],
+        );
 
         assert_result_ok(result);
     }
