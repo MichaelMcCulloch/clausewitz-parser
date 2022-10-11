@@ -13,6 +13,8 @@ pub fn root<'a>(input: &'a str) -> Res<&'a str, Val<'a>> {
 pub fn cheat_root<'a, 'b>(input: &'a str, keys: Vec<&'b str>) -> Res<&'a str, Val<'a>> {
     let mut indices = vec![];
     let mut after = input;
+    
+    // "\n\w+=.*" may be a better way to split up the file by top-level keys
     while let Some(index) = after.find_substring("\n}\n") {
         let split = after.split_at(index + 3);
 
