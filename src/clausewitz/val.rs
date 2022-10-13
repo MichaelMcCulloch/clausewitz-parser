@@ -236,10 +236,11 @@ impl<'a> ClausewitzValue<'a> for Val<'a> {
 
                 Ok(Val::Array(vec)) => {
                     let index = p.parse::<u64>().unwrap();
-                    let collect = vec.iter().filter(|(i, v)| i == &index).collect::<Vec<_>>();
-                    let x = collect.first(); //vec.get(p.parse::<usize>().unwrap());
-                    match x {
-                        Some(val) => Ok(&val.1),
+                    let element = vec
+                        .iter()
+                        .find_map(|(i, v)| if i == &index { Some(v) } else { None });
+                    match element {
+                        Some(val) => Ok(&val),
                         None => Err(IndexError {
                             err: format!("Expected to find value with index {}", p),
                         }),
