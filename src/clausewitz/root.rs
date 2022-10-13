@@ -1,7 +1,8 @@
-use std::time::Duration;
+use std::{process::exit, time::Duration};
 
 use nom::{combinator::map, FindSubstring};
 use rayon::prelude::{IntoParallelRefIterator, ParallelIterator};
+use regex::Regex;
 
 use super::{bracketed::hash_map, val::Val, Res};
 #[inline(always)]
@@ -11,21 +12,27 @@ pub fn root<'a>(input: &'a str) -> Res<&'a str, Val<'a>> {
 
 #[inline(always)]
 pub fn cheat_root<'a, 'b>(input: &'a str, keys: Vec<&'b str>) -> Res<&'a str, Val<'a>> {
-    let mut indices = vec![];
-    let mut after = input;
-
+    let mut last = 0;
+    let mut indices: Vec<&str> = vec![];
     // "\n\w+=.*\n" may be a better way to split up the file by top-level keys
-    while let Some(index) = after.find_substring("\n}\n") {
-        let split = after.split_at(index + 3);
-
-        indices.push(split.0);
-        after = split.1;
+    let regex = Regex::new(r"\n\w+=.*|version=.*").expect("invalid_regex");
+    for mat in regex.find_iter(input) {
+        if mat.start() == 0 {
+            continue;
+        }
+        let start = mat.start() + 1;
+        if start != last {
+            indices.push(&input[last..start])
+        }
+        last = start;
     }
-    indices.push(after);
+    if last < input.len() {
+        indices.push(&input[last..]);
+    }
 
     let res = Val::Dict(
         indices
-            .iter()
+            .par_iter()
             .filter_map(|string| {
                 if keys
                     .iter()
@@ -44,7 +51,6 @@ pub fn cheat_root<'a, 'b>(input: &'a str, keys: Vec<&'b str>) -> Res<&'a str, Va
             .collect(),
     );
     let res = Ok(("", res));
-
     res
 }
 
