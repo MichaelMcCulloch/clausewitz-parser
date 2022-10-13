@@ -15,7 +15,7 @@ use crate::ClausewitzValue;
 pub enum Val<'a> {
     Dict(Vec<(&'a str, Val<'a>)>),
     NumberedDict(i64, Vec<(&'a str, Val<'a>)>),
-    Array(Vec<Val<'a>>),
+    Array(Vec<(u64, Val<'a>)>),
     Set(Vec<Val<'a>>),
     StringLiteral(&'a str),
     // #[serde(serialize_with = "serialize_naive_date")]
@@ -69,7 +69,7 @@ where
     }
     map.end()
 }
-fn serialize_array<S>(arr: &Vec<Val>, serializer: S) -> Result<S::Ok, S::Error>
+fn serialize_array<S>(arr: &Vec<(u64, Val)>, serializer: S) -> Result<S::Ok, S::Error>
 where
     S: Serializer,
 {
@@ -166,7 +166,10 @@ impl<'a> ClausewitzValue<'a> for Val<'a> {
             }),
         }
     }
-    fn get_array_at_path<'b>(&'a self, path: &'b str) -> Result<&'a Vec<Val<'a>>, IndexError> {
+    fn get_array_at_path<'b>(
+        &'a self,
+        path: &'b str,
+    ) -> Result<&'a Vec<(u64, Val<'a>)>, IndexError> {
         match self.get_at_path(path)? {
             Val::Array(v) => Ok(v),
             _ => Err(IndexError {
@@ -232,9 +235,11 @@ impl<'a> ClausewitzValue<'a> for Val<'a> {
                 }
 
                 Ok(Val::Array(vec)) => {
-                    let x = vec.get(p.parse::<usize>().unwrap());
+                    let index = p.parse::<u64>().unwrap();
+                    let collect = vec.iter().filter(|(i, v)| i == &index).collect::<Vec<_>>();
+                    let x = collect.first(); //vec.get(p.parse::<usize>().unwrap());
                     match x {
-                        Some(val) => Ok(val),
+                        Some(val) => Ok(&val.1),
                         None => Err(IndexError {
                             err: format!("Expected to find value with index {}", p),
                         }),
@@ -286,7 +291,7 @@ mod tests {
     }
     #[test]
     fn val_array__given_index__returns_val_result() {
-        let val = Val::Array(vec![Val::Integer(10)]);
+        let val = Val::Array(vec![(0, Val::Integer(10))]);
         let index = "0";
 
         let dict_val = val.get_at_path(index);
@@ -296,7 +301,10 @@ mod tests {
 
     #[test]
     fn val_array_of_dicts__given_index_dot_key__returns_val_result() {
-        let val = Val::Array(vec![Val::Dict(vec![("key", Val::StringLiteral("value"))])]);
+        let val = Val::Array(vec![(
+            0,
+            Val::Dict(vec![("key", Val::StringLiteral("value"))]),
+        )]);
         let index = "0.key";
 
         let string_literal_val = val.get_at_path(index);
@@ -306,7 +314,10 @@ mod tests {
 
     #[test]
     fn val_dict_of_arrays__given_key_dot_index__returns_val_result() {
-        let val = Val::Dict(vec![("key", Val::Array(vec![Val::StringLiteral("value")]))]);
+        let val = Val::Dict(vec![(
+            "key",
+            Val::Array(vec![(0, Val::StringLiteral("value"))]),
+        )]);
         let index = "key.0";
 
         let string_literal_val = val.get_at_path(index);

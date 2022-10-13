@@ -56,7 +56,7 @@ pub fn dict<'a>(input: &'a str) -> Res<&'a str, Val<'a>> {
 }
 
 #[inline(always)]
-pub fn number_value<'a>(input: &'a str) -> Res<&'a str, (usize, Val<'a>)> {
+pub fn number_value<'a>(input: &'a str) -> Res<&'a str, (u64, Val<'a>)> {
     separated_pair(
         preceded(
             opt_space,
@@ -74,14 +74,8 @@ pub fn number_value<'a>(input: &'a str) -> Res<&'a str, (usize, Val<'a>)> {
 pub fn array<'a>(input: &'a str) -> Res<&'a str, Val<'a>> {
     map(
         separated_list0(req_space, number_value),
-        |number_value_pairs| Val::Array(fold_into_array(number_value_pairs)),
+        |number_value_pairs| Val::Array(number_value_pairs),
     )(input)
-}
-
-#[inline(always)]
-pub fn fold_into_array<'a>(mut tuple_vec: Vec<(usize, Val<'a>)>) -> Vec<Val<'a>> {
-    tuple_vec.sort_by(|(a_index, _), (b_index, _)| a_index.partial_cmp(b_index).unwrap());
-    tuple_vec.into_iter().map(|(_, val)| val).collect()
 }
 
 #[inline(always)]
