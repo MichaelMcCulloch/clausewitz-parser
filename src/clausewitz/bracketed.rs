@@ -74,7 +74,10 @@ pub fn number_value<'a>(input: &'a str) -> Res<&'a str, (u64, Val<'a>)> {
 pub fn array<'a>(input: &'a str) -> Res<&'a str, Val<'a>> {
     map(
         separated_list0(req_space, number_value),
-        |number_value_pairs| Val::Array(number_value_pairs),
+        |mut number_value_pairs| {
+            number_value_pairs.sort_by(|(a, _), (b, _)| a.cmp(b));
+            Val::Array(number_value_pairs)
+        },
     )(input)
 }
 
