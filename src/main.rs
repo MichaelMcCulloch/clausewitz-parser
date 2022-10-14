@@ -1,7 +1,6 @@
 use std::{
     fs::File,
     ops::{Add, Div},
-    os::unix::prelude::MetadataExt,
     thread,
     time::{Duration, Instant},
 };
@@ -14,14 +13,14 @@ use clausewitz_parser::{
 use memmap::Mmap;
 
 fn main() {
-    let filename = "/home/michael/Dev/Stellarust/clausewitz-parser/production_data/3.4.5.95132/hotjoin_2290.03.05/gamestate";
+    let filename = "C:\\Users\\micha\\Documents\\Paradox Interactive\\Stellaris\\save games\\mptebridhomolog2_-66053362\\gamestate";
 
     let file = File::open(filename).expect("File not found");
     let mmap = unsafe { Mmap::map(&file).expect(&format!("Error mapping file {:?}", file)) };
 
     let str = String::from_utf8_lossy(&mmap[..]);
 
-    let size_in_bytes = file.metadata().unwrap().size();
+    let size_in_bytes = file.metadata().unwrap().len();
 
     let mut times = vec![];
     let count = 10;
@@ -53,4 +52,8 @@ fn main() {
         ((size_in_bytes as u128 / avg.as_millis()) * 1000) as f32 / 1000000 as f32,
         avg.as_millis()
     );
+
+    // let (s, v) = cheat_root(&str, vec!["country"]).unwrap();
+
+    // println!("{:?}", v)
 }
