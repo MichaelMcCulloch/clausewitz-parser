@@ -31,20 +31,17 @@ pub fn cheat_root<'a, 'b>(input: &'a str, keys: Vec<&'b str>) -> Res<&'a str, Va
     }
     let res = Val::Dict(
         indices
+            .iter()
+            .filter(|block| {
+                keys.iter()
+                    .any(|k| block.starts_with(format!("{}=", k).as_str()))
+            })
+            .collect::<Vec<_>>()
             .par_iter()
-            .filter_map(|string| {
-                if keys
-                    .iter()
-                    .any(|k| string.starts_with(format!("{}=", k).as_str()))
-                {
-                    match root(string) {
-                        Ok((_, Val::Dict(dict))) => Some(dict),
-                        Ok(_) => None,
-                        Err(_) => None,
-                    }
-                } else {
-                    None
-                }
+            .filter_map(|string| match root(string) {
+                Ok((_, Val::Dict(dict))) => Some(dict),
+                Ok(_) => None,
+                Err(_) => None,
             })
             .flat_map(|v| v)
             .collect(),
