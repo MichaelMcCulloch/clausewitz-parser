@@ -80,33 +80,48 @@ where
     }
 }
 #[inline(always)]
-fn simd_loop16<'a>(str: &'a str, ranges: &[u8; CHUNK_SIZE]) -> Res<&'a str, &'a str> {
-    let start = str.as_ptr() as usize;
-    let mut i = str.as_ptr() as usize;
-    let ranges16 = unsafe { _mm_loadu_si128(ranges.as_ptr() as *const _) };
-    let _ranges_len = ranges.len() as i32;
-    loop {
-        let s1 = unsafe { _mm_loadu_si128(i as *const _) };
 
-        let idx = unsafe {
+fn simd_loop16<'a>(string: &'a str, character_ranges: &[u8; CHUNK_SIZE]) -> Res<&'a str, &'a str> {
+    // Get the starting pointer of the string
+    let start_pointer = string.as_ptr() as usize;
+    // Set the current pointer to the starting pointer
+    let mut current_pointer = string.as_ptr() as usize;
+    // Load the range of characters into a SIMD register
+    let character_ranges16 = unsafe { _mm_loadu_si128(character_ranges.as_ptr() as *const _) };
+    // Get the length of the range of characters
+    let character_ranges_length = character_ranges.len() as i32;
+    loop {
+        // Load 16 bytes from the current pointer into a SIMD register
+        let simd_register1 = unsafe { _mm_loadu_si128(current_pointer as *const _) };
+
+        // Compare the range of characters with the 16 bytes loaded into the SIMD register
+        let index = unsafe {
             _mm_cmpestri(
-                ranges16,
+                character_ranges16,
                 CHUNK_SIZE as i32,
-                s1,
+                simd_register1,
                 CHUNK_SIZE as i32,
                 _SIDD_LEAST_SIGNIFICANT | _SIDD_CMP_RANGES | _SIDD_UBYTE_OPS,
             )
         };
 
-        if idx != CHUNK_SIZE as i32 {
-            i += idx as usize;
+        // If a character is found within the range, break out of the loop and get its index
+        if index != CHUNK_SIZE as i32 {
+            current_pointer += index as usize;
             break;
         }
-        i += CHUNK_SIZE;
+
+        // Otherwise, move to the next 16 bytes
+        current_pointer += CHUNK_SIZE;
     }
-    let index = i - start;
-    let (before, after) = str.split_at(min(index, str.len()));
-    return Ok((after, before));
+
+    // Calculate the index of the found character
+    let character_index = current_pointer - start_pointer;
+
+    // Split the string at the index and return a tuple containing the substring after and before it
+    let (substring_before, substring_after) = string.split_at(min(character_index, string.len()));
+
+    return Ok((substring_after, substring_before));
 }
 
 #[cfg(test)]
