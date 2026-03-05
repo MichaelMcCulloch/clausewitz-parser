@@ -1,22 +1,17 @@
 use std::{
     fs::File,
     ops::{Add, Div},
-    thread,
-    time::{Duration, Instant},
+    time::Instant,
 };
 
-use clausewitz_parser::{
-    cheat_root, root,
-    skim::{isp::ISP, search_document},
-    ClausewitzValue,
-};
+use clausewitz_parser::cheat_root;
 use memmap::Mmap;
 
 fn main() {
     let filename = "C:\\Users\\micha\\Documents\\Paradox Interactive\\Stellaris\\save games\\mptebridhomolog2_-66053362\\gamestate";
 
     let file = File::open(filename).expect("File not found");
-    let mmap = unsafe { Mmap::map(&file).expect(&format!("Error mapping file {:?}", file)) };
+    let mmap = unsafe { Mmap::map(&file).unwrap_or_else(|_| panic!("Error mapping file {:?}", file)) };
 
     let str = String::from_utf8_lossy(&mmap[..]);
 
@@ -49,7 +44,7 @@ fn main() {
         .div(count);
     println!(
         "{:?}MB/s, took {} ms.",
-        ((size_in_bytes as u128 / avg.as_millis()) * 1000) as f32 / 1000000 as f32,
+        ((size_in_bytes as u128 / avg.as_millis()) * 1000) as f32 / 1000000_f32,
         avg.as_millis()
     );
 

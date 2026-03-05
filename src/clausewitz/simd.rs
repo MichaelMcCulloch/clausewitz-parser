@@ -59,7 +59,6 @@ pub fn take_simd_space<'a>(input: &'a str) -> Res<&'a str, &'a str> {
         SPACE_RANGES,
     )(input)
 }
-
 #[inline(always)]
 fn take_while_simd<'a, Condition, Error: ParseError<&'a str>>(
     cond: Condition,
@@ -80,7 +79,6 @@ where
     }
 }
 #[inline(always)]
-
 fn simd_loop16<'a>(string: &'a str, character_ranges: &[u8; CHUNK_SIZE]) -> Res<&'a str, &'a str> {
     // Get the starting pointer of the string
     let start_pointer = string.as_ptr() as usize;

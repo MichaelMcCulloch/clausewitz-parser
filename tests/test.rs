@@ -4,7 +4,7 @@ mod file_test {
 
     use clausewitz_parser::root;
     use memmap::Mmap;
-    use nom::InputTake;
+    
 
     #[test]
     fn meta() {
@@ -23,7 +23,7 @@ mod file_test {
             "/home/michael/Dev/Stellarust/clausewitz-parser/production_data/3.4.5.95132/2290.03.05/gamestate";
         let file = File::open(filename).expect("File not found");
 
-        let mmap = unsafe { Mmap::map(&file).expect(&format!("Error mapping file {:?}", file)) };
+        let mmap = unsafe { Mmap::map(&file).unwrap_or_else(|_| panic!("Error mapping file {:?}", file)) };
 
         let str = String::from_utf8_lossy(&mmap[..]);
 
