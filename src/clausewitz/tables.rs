@@ -112,7 +112,7 @@ pub fn is_space(c: char) -> bool {
 
 #[inline(always)]
 pub fn is_digit(char: char) -> bool {
-    char.is_digit(10)
+    char.is_ascii_digit()
 }
 
 #[inline(always)]

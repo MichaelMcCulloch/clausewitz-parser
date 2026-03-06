@@ -191,7 +191,7 @@ impl<'a> ClausewitzValue<'a> for Val<'a> {
     fn get_numbered_dict_at_path<'b>(
         &'a self,
         path: &'b str,
-    ) -> Result<(&'a i64, &'a Vec<(&'a str, Val<'a>)>), IndexError> {
+    ) -> Result<crate::NumberedDictRef<'a>, IndexError> {
         match self.get_at_path(path)? {
             Val::NumberedDict(n, v) => Ok((n, v)),
             _ => Err(IndexError {
@@ -204,54 +204,34 @@ impl<'a> ClausewitzValue<'a> for Val<'a> {
         let path_components = path.split(".").collect::<Vec<_>>();
         path_components
             .into_iter()
-            .fold(Ok(self), |result, p| match result {
-                Ok(Val::Dict(dict_inner)) => {
-                    let filtered_values = dict_inner
-                        .iter()
-                        .filter_map(|(k, v)| if k == &p { Some(v) } else { None })
-                        .collect::<Vec<_>>();
-                    let val_for_key = filtered_values.first();
+            .try_fold(self, |current, p| match current {
+                Val::Dict(dict_inner) => dict_inner
+                    .iter()
+                    .find_map(|(k, v)| if k == &p { Some(v) } else { None })
+                    .ok_or_else(|| IndexError {
+                        err: format!("Expected to find value with key {}", p),
+                    }),
 
-                    match val_for_key {
-                        Some(val) => Ok(val),
-                        None => Err(IndexError {
-                            err: format!("Expected to find value with key {}", p),
-                        }),
-                    }
-                }
+                Val::NumberedDict(_number, num_dict_inner) => num_dict_inner
+                    .iter()
+                    .find_map(|(k, v)| if k == &p { Some(v) } else { None })
+                    .ok_or_else(|| IndexError {
+                        err: format!("Expected to find value with key {}", p),
+                    }),
 
-                Ok(Val::NumberedDict(_number, num_dict_inner)) => {
-                    let filtered_values = num_dict_inner
-                        .iter()
-                        .filter_map(|(k, v)| if k == &p { Some(v) } else { None })
-                        .collect::<Vec<_>>();
-                    let dict_value = filtered_values.first();
-                    match dict_value {
-                        Some(val) => Ok(val),
-                        None => Err(IndexError {
-                            err: format!("Expected to find value with key {}", p),
-                        }),
-                    }
-                }
-
-                Ok(Val::Array(vec)) => {
+                Val::Array(vec) => {
                     let index = p.parse::<u64>().unwrap();
-                    let element = vec
-                        .iter()
-                        .find_map(|(i, v)| if i == &index { Some(v) } else { None });
-                    match element {
-                        Some(val) => Ok(&val),
-                        None => Err(IndexError {
+                    vec.iter()
+                        .find_map(|(i, v)| if i == &index { Some(v) } else { None })
+                        .ok_or_else(|| IndexError {
                             err: format!("Expected to find value with index {}", p),
-                        }),
-                    }
+                        })
                 }
-                Ok(Val::Set(_)) => Err(IndexError {
+                Val::Set(_) => Err(IndexError {
                     err: format!("Cannot index a set with index {}", p),
                 }),
-                Err(e) => Err(e),
                 _ => Err(IndexError {
-                    err: format!("Cannot index terminal values!"),
+                    err: "Cannot index terminal values!".to_string(),
                 }),
             })
     }
@@ -262,16 +242,17 @@ mod tests {
 
     #[test]
     fn test_parse_country() {
-        let s = std::fs::read_to_string(
-            concat!(env!("CARGO_MANIFEST_DIR"), "/production_data/2337.02.02-testing/gamestate"),
-        )
+        let s = std::fs::read_to_string(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/production_data/2337.02.02-testing/gamestate"
+        ))
         .unwrap();
         let gamestate = crate::root(&s).unwrap().1;
         let country = gamestate.get_at_path("country");
         assert!(country.is_ok());
     }
     #[test]
-    fn val_dict__given_key__returns_val_result() {
+    fn val_dict_given_key_returns_val_result() {
         let val = Val::Dict(vec![("key", Val::Integer(10))]);
         let index = "key";
 
@@ -280,7 +261,7 @@ mod tests {
         assert_eq!(Ok(&Val::Integer(10)), dict_val);
     }
     #[test]
-    fn val_numbered_dict__given_key__returns_val_result() {
+    fn val_numbered_dict_given_key_returns_val_result() {
         let val = Val::NumberedDict(0, vec![("key", Val::Integer(10))]);
         let index = "key";
 
@@ -289,7 +270,7 @@ mod tests {
         assert_eq!(Ok(&Val::Integer(10)), dict_val);
     }
     #[test]
-    fn val_array__given_index__returns_val_result() {
+    fn val_array_given_index_returns_val_result() {
         let val = Val::Array(vec![(0, Val::Integer(10))]);
         let index = "0";
 
@@ -299,7 +280,7 @@ mod tests {
     }
 
     #[test]
-    fn val_array_of_dicts__given_index_dot_key__returns_val_result() {
+    fn val_array_of_dicts_given_index_dot_key_returns_val_result() {
         let val = Val::Array(vec![(
             0,
             Val::Dict(vec![("key", Val::StringLiteral("value"))]),
@@ -312,7 +293,7 @@ mod tests {
     }
 
     #[test]
-    fn val_dict_of_arrays__given_key_dot_index__returns_val_result() {
+    fn val_dict_of_arrays_given_key_dot_index_returns_val_result() {
         let val = Val::Dict(vec![(
             "key",
             Val::Array(vec![(0, Val::StringLiteral("value"))]),

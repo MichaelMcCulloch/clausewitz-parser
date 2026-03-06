@@ -14,11 +14,3 @@ pub fn assert_result_ok<T: Debug + Clone>(result: Res<&str, T>) {
     assert!(result.is_ok());
     assert!(result.unwrap().0.is_empty())
 }
-
-pub fn assert_result_err<T: Debug + Clone>(result: Res<&str, T>) {
-    let result2 = result.clone();
-    if result2.is_ok() {
-        println!("{:#?}", result2.unwrap().1);
-    }
-    assert!(result.is_err());
-}

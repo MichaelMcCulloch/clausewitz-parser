@@ -2,7 +2,6 @@ use chrono::NaiveDate;
 use nom::{
     character::complete::{char, digit1},
     combinator::{map, map_res, opt, recognize, verify},
-    error::VerboseError,
     sequence::tuple,
 };
 
@@ -30,7 +29,7 @@ pub fn decimal<'a>(input: &'a str) -> Res<&'a str, Val<'a>> {
 }
 
 #[inline(always)]
-pub fn int<'a>(input: &'a str) -> Res<&'a str, i64> {
+pub fn int(input: &str) -> Res<&str, i64> {
     map_res(
         verify(recognize(tuple((opt(char('-')), digit1))), |s: &str| {
             !s.is_empty()
@@ -67,25 +66,25 @@ mod tests {
 
     use super::*;
     #[test]
-    fn unquoted__integer__integer() {
+    fn unquoted_integer_integer() {
         let text = "0";
         let (_remainder, parse_output) = unquoted(text).unwrap();
         assert_eq!(parse_output, Val::Integer(0));
     }
     #[test]
-    fn unquoted__decimal__decimal() {
+    fn unquoted_decimal_decimal() {
         let text = "0.0";
         let (_remainder, parse_output) = unquoted(text).unwrap();
         assert_eq!(parse_output, Val::Decimal(0.0));
     }
     #[test]
-    fn unquoted__identifier__identifier() {
+    fn unquoted_identifier_identifier() {
         let text = "zer0";
         let (_remainder, parse_output) = unquoted(text).unwrap();
         assert_eq!(parse_output, Val::Identifier("zer0"));
     }
     #[test]
-    fn unquoted__date__identifier() {
+    fn unquoted_date_identifier() {
         let text = "2200.02.02";
         let (_remainder, parse_output) = unquoted(text).unwrap();
         assert_eq!(parse_output, Val::Date(NaiveDate::from_ymd(2200, 2, 2)));
@@ -97,7 +96,7 @@ mod tests {
         use super::*;
 
         #[test]
-        fn identifire__alphanumeric_with_underscore_and_colon__accepted() {
+        fn identifire_alphanumeric_with_underscore_and_colon_accepted() {
             let text = "alpha_:numeric1234567890";
             let (remainder, parse_output) = identifier(text).unwrap();
             assert_eq!(parse_output, Val::Identifier(text));
@@ -105,13 +104,13 @@ mod tests {
         }
 
         #[test]
-        fn identifire__begins_with_number__rejected() {
+        fn identifire_begins_with_number_rejected() {
             let text = "0alpha_numeric1234567890";
             assert!(identifier(text).is_err());
         }
 
         #[test]
-        fn identifire__empty__rejectec() {
+        fn identifire_empty_rejectec() {
             let text = "";
             assert!(identifier(text).is_err());
         }
@@ -122,12 +121,12 @@ mod tests {
         use super::*;
 
         #[test]
-        fn integer__empty__rejected() {
+        fn integer_empty_rejected() {
             let text = "";
             assert!(integer(text).is_err());
         }
         #[test]
-        fn integer__zero__accepted() {
+        fn integer_zero_accepted() {
             let text = "0";
             let (remainder, parse_output) = integer(text).unwrap();
             assert_eq!(parse_output, Val::Integer(0));
@@ -135,7 +134,7 @@ mod tests {
         }
 
         #[test]
-        fn integer__negative_number__accepted() {
+        fn integer_negative_number_accepted() {
             let text = "-1";
             let (remainder, parse_output) = integer(text).unwrap();
             assert_eq!(parse_output, Val::Integer(-1));
@@ -143,7 +142,7 @@ mod tests {
         }
 
         #[test]
-        fn integer__all_digits__accepted() {
+        fn integer_all_digits_accepted() {
             let text = "1234567890";
             let (remainder, parse_output) = integer(text).unwrap();
             assert_eq!(parse_output, Val::Integer(1234567890));
@@ -151,7 +150,7 @@ mod tests {
         }
 
         #[test]
-        fn integer__dots__accepted_up_to_dot_then_remainder() {
+        fn integer_dots_accepted_up_to_dot_then_remainder() {
             let text = "-12345.6789";
             let (remainder, parse_output) = integer(text).unwrap();
             assert_eq!(parse_output, Val::Integer(-12345));
@@ -159,7 +158,7 @@ mod tests {
         }
 
         #[test]
-        fn integer__letters__int_up_to_letter_then_remainder() {
+        fn integer_letters_int_up_to_letter_then_remainder() {
             let text = "-1234567d89.098098";
             let (remainder, parse_output) = integer(text).unwrap();
             assert_eq!(parse_output, Val::Integer(-1234567));
@@ -173,7 +172,7 @@ mod tests {
         use super::*;
 
         #[test]
-        fn decimal__small_number__accepted() {
+        fn decimal_small_number_accepted() {
             let text = "0.00001011110110132";
             let (remainder, parse_output) = decimal(text).unwrap();
             assert_eq!(parse_output, Val::Decimal(0.00001011110110132));
@@ -181,7 +180,7 @@ mod tests {
         }
 
         #[test]
-        fn decimal__negative_number__accepted() {
+        fn decimal_negative_number_accepted() {
             let text = "-0.1";
             let (remainder, parse_output) = decimal(text).unwrap();
             assert_eq!(parse_output, Val::Decimal(-0.1));
@@ -189,7 +188,7 @@ mod tests {
         }
 
         #[test]
-        fn decimal__all_digits__accepted() {
+        fn decimal_all_digits_accepted() {
             let text = "-12345.6789";
             let (remainder, parse_output) = decimal(text).unwrap();
             assert_eq!(parse_output, Val::Decimal(-12345.6789));
@@ -197,7 +196,7 @@ mod tests {
         }
 
         #[test]
-        fn decimal__too_many_dots__accepted_with_remainder() {
+        fn decimal_too_many_dots_accepted_with_remainder() {
             let text = "-12345.6789.098098";
             let (remainder, parse_output) = decimal(text).unwrap();
             assert_eq!(parse_output, Val::Decimal(-12345.6789));
@@ -205,7 +204,7 @@ mod tests {
         }
 
         #[test]
-        fn decimal__letters__float_up_to_letter_then_remainder() {
+        fn decimal_letters_float_up_to_letter_then_remainder() {
             let text = "-12345.67d89.098098";
             let (remainder, parse_output) = decimal(text).unwrap();
             assert_eq!(parse_output, Val::Decimal(-12345.67));

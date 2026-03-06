@@ -3,36 +3,33 @@ use nom::{
     bytes::complete::take,
     character::complete::{char, digit1},
     combinator::{cut, map, map_res, recognize, verify},
-    error::ParseError,
     multi::separated_list0,
     sequence::{delimited, pair, preceded, separated_pair, tuple},
-    IResult, Parser,
 };
 
 use super::{
     quoted::string_literal_contents,
     simd::{take_simd_identifier, take_simd_not_token},
     space::{opt_space, req_space},
-    unquoted::integer,
     val::Val,
     value::value,
     Res,
 };
 
 #[inline(always)]
-pub fn unquoted_key<'a>(input: &'a str) -> Res<&'a str, &'a str> {
+pub fn unquoted_key(input: &str) -> Res<&str, &str> {
     verify(take_simd_identifier, |s: &str| {
         !s.is_empty() //&& !(is_digit(s.chars().next().unwrap()))
     })(input)
 }
 
 #[inline(always)]
-pub fn quoted_key<'a>(input: &'a str) -> Res<&'a str, &'a str> {
+pub fn quoted_key(input: &str) -> Res<&str, &str> {
     delimited(char('\"'), string_literal_contents, char('\"'))(input)
 }
 
 #[inline(always)]
-pub fn key<'a>(input: &'a str) -> Res<&'a str, &'a str> {
+pub fn key(input: &str) -> Res<&str, &str> {
     alt((unquoted_key, quoted_key))(input)
 }
 
@@ -91,30 +88,13 @@ pub fn set<'a>(input: &'a str) -> Res<&'a str, Val<'a>> {
 
 #[inline(always)]
 pub fn set_of_collections<'a>(input: &'a str) -> Res<&'a str, Val<'a>> {
-    map(separated_list0(req_space, bracketed), |vals| Val::Set(vals))(input)
+    map(separated_list0(req_space, bracketed), Val::Set)(input)
 }
 
 #[inline(always)]
-pub fn triple<I, O1, O2, O3, E: ParseError<I>, F, G, H>(
-    mut first: F,
-    mut second: G,
-    mut third: H,
-) -> impl FnMut(I) -> IResult<I, (O1, O2, O3), E>
-where
-    F: Parser<I, O1, E>,
-    G: Parser<I, O2, E>,
-    H: Parser<I, O3, E>,
-{
-    move |input: I| {
-        let (input, o1) = first.parse(input)?;
-        let (input, o2) = second.parse(input)?;
-        third.parse(input).map(|(i, o3)| (i, (o1, o2, o3)))
-    }
-}
-#[inline(always)]
 pub fn contents<'a>(input: &'a str) -> Res<&'a str, Val<'a>> {
     let (_remainder, (maybe_key_number_identifier, next_token)) =
-        pair(take_simd_not_token, take(1 as usize))(input)?;
+        pair(take_simd_not_token, take(1_usize))(input)?;
 
     match next_token {
         "}" => cut(set)(input),
@@ -170,7 +150,7 @@ mod tests {
     use super::*;
     use crate::clausewitz::tests::helper::assert_result_ok;
     #[test]
-    fn bracketed__dict__dict() {
+    fn bracketed_dict_dict() {
         let text = r###"{
 			first="first"
 			second="second"
@@ -180,7 +160,7 @@ mod tests {
     }
 
     #[test]
-    fn bracketed__array__array() {
+    fn bracketed_array_array() {
         let text = r###"{
 		0="first"
 		1="second"
@@ -190,7 +170,7 @@ mod tests {
     }
 
     #[test]
-    fn bracketed__set__set() {
+    fn bracketed_set_set() {
         let text = r###"{
 		"first"
 		"second"
@@ -203,26 +183,26 @@ mod tests {
         use crate::clausewitz::{bracketed::key_value, tests::helper::assert_result_ok};
 
         #[test]
-        fn key_value__unquoted__accepted() {
+        fn key_value_unquoted_accepted() {
             let text = r###"key.0="value""###;
             let result = key_value(text);
             assert_result_ok(result)
         }
 
         #[test]
-        fn key_value__quoted__accepted() {
+        fn key_value_quoted_accepted() {
             let text = r###""key.0"=0"###;
             let result = key_value(text);
             assert_result_ok(result)
         }
         #[test]
-        fn key_value__begins_with_number_quoted__accepted() {
+        fn key_value_begins_with_number_quoted_accepted() {
             let text = r###""0_key.0"=0"###;
             let result = key_value(text);
             assert_result_ok(result)
         }
         #[test]
-        fn key_value__begins_with_number_unquoted__accepted() {
+        fn key_value_begins_with_number_unquoted_accepted() {
             let text = r###"0_key.0=0"###;
             let result = key_value(text);
             assert_result_ok(result)

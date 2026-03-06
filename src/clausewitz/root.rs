@@ -1,6 +1,4 @@
-use std::{process::exit, time::Duration};
-
-use nom::{combinator::map, FindSubstring, InputTake};
+use nom::combinator::map;
 use rayon::prelude::{IntoParallelRefIterator, ParallelIterator};
 use regex::Regex;
 
@@ -13,7 +11,7 @@ pub fn root<'a>(input: &'a str) -> Res<&'a str, Val<'a>> {
 }
 
 #[inline(always)]
-pub fn cheat_root<'a, 'b>(input: &'a str, keys: Vec<&'b str>) -> Res<&'a str, Val<'a>> {
+pub fn cheat_root<'a>(input: &'a str, keys: Vec<&str>) -> Res<&'a str, Val<'a>> {
     let mut last = 0;
     let mut indices: Vec<&str> = vec![];
     // "\n\w+=.*\n" may be a better way to split up the file by top-level keys
@@ -48,15 +46,14 @@ pub fn cheat_root<'a, 'b>(input: &'a str, keys: Vec<&'b str>) -> Res<&'a str, Va
             .flat_map(|v| v)
             .collect(),
     );
-    let res = Ok(("", res));
-    res
+    Ok(("", res))
 }
 
 #[cfg(test)]
 mod tests {
     use crate::{clausewitz::tests::helper::assert_result_ok, key_value};
     #[test]
-    fn root__key_identifier_pairs__ok() {
+    fn root_key_identifier_pairs_ok() {
         let text = r###"dict={
     alpha=a
     beta=b
@@ -68,10 +65,7 @@ dict2={
     zoo=ilhjok
 }"###;
 
-        let result = cheat_root(
-            &text,
-            vec!["version", "player", "country", "fleet", "ships"],
-        );
+        let result = cheat_root(text, vec!["version", "player", "country", "fleet", "ships"]);
 
         assert_result_ok(result);
     }
@@ -94,7 +88,7 @@ dict2={
     40 41
 }"###;
 
-        let result = root(&text);
+        let result = root(text);
         assert_result_ok(result);
     }
     #[test]
@@ -167,7 +161,7 @@ dict2={
     }
 
     #[test]
-    fn quoted__key__ok() {
+    fn quoted_key_ok() {
         let text = r###""The name Of A Ship"=0"###;
 
         let result = root(text);
@@ -175,7 +169,7 @@ dict2={
     }
 
     #[test]
-    fn empty__set__set() {
+    fn empty_set_set() {
         let text = r###"empty_set={}"###;
 
         let result = root(text);
@@ -183,7 +177,7 @@ dict2={
     }
 
     #[test]
-    fn root__set_of_strings__accepted() {
+    fn root_set_of_strings_accepted() {
         let text = r###"set_of_strings={
                 "Ancient Relics Story Pack"
                 "Anniversary Portraits"
@@ -195,7 +189,7 @@ dict2={
     }
 
     #[test]
-    fn array__of__arrays() {
+    fn array_of_arrays() {
         let text = r###"array_of_arrays={
                 0={
                     0="a"
@@ -213,7 +207,7 @@ dict2={
     }
 
     #[test]
-    fn identifier__with__underscore() {
+    fn identifier_with_underscore() {
         let text = r###"identifier=identi_fire"###;
 
         let result = root(text);
@@ -221,7 +215,7 @@ dict2={
     }
 
     #[test]
-    fn dict__key_identifier_pairs__ok() {
+    fn dict_key_identifier_pairs_ok() {
         let text = r###"dict={
                 alpha=a
                 beta=b

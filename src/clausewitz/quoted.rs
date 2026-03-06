@@ -40,7 +40,7 @@ pub fn map_to_date<'a>(s: &'a str) -> anyhow::Result<NaiveDate> {
     let parts: Vec<&'a str> = s.split(".").collect();
 
     let year = parts
-        .get(0)
+        .first()
         .ok_or(DateParseError {
             err: String::from("Too Short"),
         })?
@@ -66,7 +66,7 @@ pub fn map_to_date<'a>(s: &'a str) -> anyhow::Result<NaiveDate> {
 }
 
 #[inline(always)]
-pub fn string_literal_contents<'a>(input: &'a str) -> Res<&'a str, &'a str> {
+pub fn string_literal_contents(input: &str) -> Res<&str, &str> {
     take_simd_string_literal(input)
 }
 
@@ -85,14 +85,14 @@ mod tests {
     use super::*;
 
     #[test]
-    fn quoted__date__date() {
+    fn quoted_date_date() {
         let text = "\"2200.01.01\"";
         let (_remainder, parse_output) = quoted(text).unwrap();
         assert_eq!(parse_output, Val::Date(NaiveDate::from_ymd(2200, 1, 1)));
     }
 
     #[test]
-    fn quoted__not_date__string() {
+    fn quoted_not_date_string() {
         let text = "\"2200.011\"";
         let (_remainder, parse_output) = quoted(text).unwrap();
         assert_eq!(parse_output, Val::StringLiteral("2200.011"));
@@ -103,38 +103,38 @@ mod tests {
 
         use super::*;
         #[test]
-        fn date__decimal_separated_yyyy_mm_date__accepted() {
+        fn date_decimal_separated_yyyy_mm_date_accepted() {
             let text = "2200.01.01";
             let (_remainder, parse_output) = date(text).unwrap();
-            assert_eq!(parse_output, Val::Date(NaiveDate::from_ymd(2200, 1, 01)));
+            assert_eq!(parse_output, Val::Date(NaiveDate::from_ymd(2200, 1, 1)));
         }
 
         #[test]
-        fn date__4digit_year__accepted() {
+        fn date_4digit_year_accepted() {
             let text = "2200.01.01";
             let (_remainder, parse_output) = date(text).unwrap();
-            assert_eq!(parse_output, Val::Date(NaiveDate::from_ymd(2200, 1, 01)));
+            assert_eq!(parse_output, Val::Date(NaiveDate::from_ymd(2200, 1, 1)));
         }
 
         #[test]
-        fn date__3digit_year__accepted() {
+        fn date_3digit_year_accepted() {
             let text = "200.01.01";
             let (_remainder, parse_output) = date(text).unwrap();
-            assert_eq!(parse_output, Val::Date(NaiveDate::from_ymd(200, 1, 01)));
+            assert_eq!(parse_output, Val::Date(NaiveDate::from_ymd(200, 1, 1)));
         }
 
         #[test]
-        fn date__2digit_year__accepted() {
+        fn date_2digit_year_accepted() {
             let text = "20.01.01";
             let (_remainder, parse_output) = date(text).unwrap();
-            assert_eq!(parse_output, Val::Date(NaiveDate::from_ymd(20, 1, 01)));
+            assert_eq!(parse_output, Val::Date(NaiveDate::from_ymd(20, 1, 1)));
         }
 
         #[test]
-        fn date__1digit_year__accepted() {
+        fn date_1digit_year_accepted() {
             let text = "2.01.01";
             let (_remainder, parse_output) = date(text).unwrap();
-            assert_eq!(parse_output, Val::Date(NaiveDate::from_ymd(2, 1, 01)));
+            assert_eq!(parse_output, Val::Date(NaiveDate::from_ymd(2, 1, 1)));
         }
     }
 
@@ -143,20 +143,20 @@ mod tests {
 
         use super::*;
         #[test]
-        fn string_literal__string__accepted() {
+        fn string_literal_string_accepted() {
             let text = "this is a string with a bun1234567890ch of special characters!@#$%^&*(_()";
             let (_remainder, parse_output) = string_literal(text).unwrap();
             assert_eq!(parse_output, Val::StringLiteral(text));
         }
         #[test]
-        fn string_literal__accent__accepted() {
+        fn string_literal_accent_accepted() {
             let text = "Rivén's Burrow";
             let (_remainder, parse_output) = string_literal(text).unwrap();
             assert_eq!(parse_output, Val::StringLiteral(text));
         }
 
         #[test]
-        fn string_literal__decimal_separated_yyyy_mm_string_litteral__accepted() {
+        fn string_literal_decimal_separated_yyyy_mm_string_litteral_accepted() {
             let (remainder_quote, result_quote) = string_literal("\"").unwrap();
 
             assert_eq!(result_quote, Val::StringLiteral(""));

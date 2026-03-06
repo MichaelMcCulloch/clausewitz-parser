@@ -1,19 +1,18 @@
 use std::vec;
 
-use nom::{
-    branch::alt,
-    bytes::complete::{take, take_while},
-    character::complete::{char, digit1},
-    combinator::{cut, map, opt, recognize, verify},
-    error::{ParseError, VerboseError, VerboseErrorKind},
-    multi::separated_list0,
-    sequence::{delimited, preceded, separated_pair, tuple},
-    AsChar, IResult, InputIter, InputLength, Needed, Parser, Slice,
-};
-const CHUNK_SIZE: usize = 16;
 use super::{
     simd::{take_simd_identifier, take_simd_not_token, take_simd_space, take_simd_string_literal},
-    tables::{identifier_table, is_digit},
+    tables::is_digit,
+};
+use nom::{
+    branch::alt,
+    bytes::complete::take,
+    character::complete::{char, digit1},
+    combinator::{cut, map, opt, recognize, verify},
+    error::{VerboseError, VerboseErrorKind},
+    multi::separated_list0,
+    sequence::{delimited, preceded, tuple},
+    IResult,
 };
 pub mod isp;
 use isp::*;
@@ -37,7 +36,7 @@ pub fn opt_space<'a, 'b>(input: ISP<'a, 'b>) -> SR<ISP<'a, 'b>, ISP<'a, 'b>> {
             errors: e
                 .errors
                 .into_iter()
-                .map(|(str, vbe)| (input, VerboseErrorKind::Context("whatever")))
+                .map(|(_str, _vbe)| (input, VerboseErrorKind::Context("whatever")))
                 .collect(),
         })),
     }
@@ -70,7 +69,7 @@ pub fn string_literal_contents<'a, 'b>(input: ISP<'a, 'b>) -> SR<ISP<'a, 'b>, IS
             errors: e
                 .errors
                 .into_iter()
-                .map(|(str, vbe)| (input, VerboseErrorKind::Context("whatever")))
+                .map(|(_str, _vbe)| (input, VerboseErrorKind::Context("whatever")))
                 .collect(),
         })),
     }
@@ -131,7 +130,7 @@ pub fn term_bracketed<'a, 'b>(input: ISP<'a, 'b>) -> SR<ISP<'a, 'b>, Vec<ISP<'a,
 pub fn set<'a, 'b>(input: ISP<'a, 'b>) -> SR<ISP<'a, 'b>, Vec<ISP<'a, 'b>>> {
     alt((
         map(separated_list0(req_space, value), |vvec| {
-            vvec.into_iter().flat_map(|vec| vec).collect()
+            vvec.into_iter().flatten().collect()
         }),
         map(opt_space, |_s| vec![]),
     ))(input)
@@ -173,16 +172,11 @@ pub fn number_value<'a, 'b>(input: ISP<'a, 'b>) -> SR<ISP<'a, 'b>, Vec<ISP<'a, '
 }
 
 pub fn array<'a, 'b>(input: ISP<'a, 'b>) -> SR<ISP<'a, 'b>, Vec<ISP<'a, 'b>>> {
-    let f = number_value(input);
+    let _f = number_value(input);
 
     map(
         separated_list0(req_space, number_value),
-        |number_value_pairs| {
-            number_value_pairs
-                .into_iter()
-                .flat_map(|f| f)
-                .collect::<Vec<_>>()
-        },
+        |number_value_pairs| number_value_pairs.into_iter().flatten().collect::<Vec<_>>(),
     )(input)
 }
 
@@ -192,7 +186,7 @@ pub fn dict<'a, 'b>(input: ISP<'a, 'b>) -> SR<ISP<'a, 'b>, Vec<ISP<'a, 'b>>> {
 
 pub fn set_of_collections<'a, 'b>(input: ISP<'a, 'b>) -> SR<ISP<'a, 'b>, Vec<ISP<'a, 'b>>> {
     map(separated_list0(req_space, bracketed), |vals| {
-        vals.into_iter().flat_map(|f| f).collect()
+        vals.into_iter().flatten().collect()
     })(input)
 }
 pub fn numbered_dict<'a, 'b>(input: ISP<'a, 'b>) -> SR<ISP<'a, 'b>, Vec<ISP<'a, 'b>>> {
@@ -206,20 +200,20 @@ pub fn numbered_dict<'a, 'b>(input: ISP<'a, 'b>) -> SR<ISP<'a, 'b>, Vec<ISP<'a, 
                 char('}'),
             ),
         )),
-        |(number, _, map)| map,
+        |(_number, _, map)| map,
     )(input)
 }
 
 pub fn contents<'a, 'b>(input: ISP<'a, 'b>) -> SR<ISP<'a, 'b>, Vec<ISP<'a, 'b>>> {
     let (remainder, maybe_key_number_identifier) = not_token(input)?;
 
-    let (_remainder, next_token) = take(1 as usize)(remainder)?;
+    let (_remainder, next_token) = take(1_usize)(remainder)?;
 
     if next_token.slice == "}" {
         return cut(set)(input);
     } else if next_token.slice == "=" {
         let (_rem, maybe_ident) = identifier_simd(maybe_key_number_identifier)?;
-        return if let Ok(_) = maybe_ident.slice.parse::<i64>() {
+        return if maybe_ident.slice.parse::<i64>().is_ok() {
             cut(array)(input)
         } else {
             cut(dict)(input)
@@ -255,7 +249,7 @@ fn identifier_simd<'a, 'b>(input: ISP<'a, 'b>) -> SR<ISP<'a, 'b>, ISP<'a, 'b>> {
             errors: e
                 .errors
                 .into_iter()
-                .map(|(str, vbe)| (input, VerboseErrorKind::Context("whatever")))
+                .map(|(_str, _vbe)| (input, VerboseErrorKind::Context("whatever")))
                 .collect(),
         })),
     }
@@ -279,7 +273,7 @@ fn not_token<'a, 'b>(input: ISP<'a, 'b>) -> SR<ISP<'a, 'b>, ISP<'a, 'b>> {
             errors: e
                 .errors
                 .into_iter()
-                .map(|(str, vbe)| (input, VerboseErrorKind::Context("whatever")))
+                .map(|(_str, _vbe)| (input, VerboseErrorKind::Context("whatever")))
                 .collect(),
         })),
     }
@@ -306,12 +300,12 @@ fn key_value<'a, 'b>(input: ISP<'a, 'b>) -> SR<ISP<'a, 'b>, Vec<ISP<'a, 'b>>> {
                     };
                     Ok((rem_val, val))
                 } else {
-                    let (rem_eq, eq) = cut(preceded(opt_space, char('=')))(rem_key)?;
-                    let (rem_val, val) = preceded(opt_space, value)(rem_eq)?;
+                    let (rem_eq, _eq) = cut(preceded(opt_space, char('=')))(rem_key)?;
+                    let (rem_val, _val) = preceded(opt_space, value)(rem_eq)?;
                     Ok((rem_val, vec![]))
                 }
             } else {
-                let (rem_eq, eq) = cut(preceded(opt_space, char('=')))(rem_key)?;
+                let (rem_eq, _eq) = cut(preceded(opt_space, char('=')))(rem_key)?;
                 let (rem_val, val) = preceded(opt_space, value)(rem_eq)?;
 
                 Ok((rem_val, val))
@@ -324,7 +318,7 @@ fn key_value<'a, 'b>(input: ISP<'a, 'b>) -> SR<ISP<'a, 'b>, Vec<ISP<'a, 'b>>> {
 /// This should return a list the values at found paths
 fn search_hashmap<'a, 'b>(input: ISP<'a, 'b>) -> SR<ISP<'a, 'b>, Vec<ISP<'a, 'b>>> {
     separated_list0(req_space, key_value)(input)
-        .map(|(isp, vec)| (isp, vec.into_iter().flat_map(|opt| opt).collect::<Vec<_>>()))
+        .map(|(isp, vec)| (isp, vec.into_iter().flatten().collect::<Vec<_>>()))
 }
 
 pub fn search_document<'a, 'b>(input: ISP<'a, 'b>) -> SR<ISP<'a, 'b>, Vec<ISP<'a, 'b>>> {
@@ -333,25 +327,26 @@ pub fn search_document<'a, 'b>(input: ISP<'a, 'b>) -> SR<ISP<'a, 'b>, Vec<ISP<'a
 
 #[cfg(test)]
 mod tests {
-    use std::fs::{self, File};
-    use std::process::exit;
-    use std::sync::Arc;
+    use std::fs::File;
 
     use memmap::Mmap;
 
     use super::*;
     #[test]
     fn search_document_test() {
-        let filename =
-            concat!(env!("CARGO_MANIFEST_DIR"), "/production_data/2337.02.02-testing/gamestate");
+        let filename = concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/production_data/2337.02.02-testing/gamestate"
+        );
         let file = File::open(filename).expect("File not found");
 
-        let mmap = unsafe { Mmap::map(&file).expect(&format!("Error mapping file {:?}", file)) };
+        let mmap =
+            unsafe { Mmap::map(&file).unwrap_or_else(|_| panic!("Error mapping file {:?}", file)) };
 
         let str = String::from_utf8_lossy(&mmap[..]);
         let input = ISP::create(&str, "version");
 
-        let (rem, opt) = search_document(input).unwrap();
+        let (_rem, opt) = search_document(input).unwrap();
         println!("{:?}", opt);
         assert!(!opt.is_empty());
     }
@@ -362,15 +357,14 @@ mod tests {
             1=one
             2=two
         }"###;
-        let input = ISP::create(&str, "country");
+        let input = ISP::create(str, "country");
 
         let res = search_document(input);
 
-        let (rem, opt) = res.unwrap();
+        let (_rem, opt) = res.unwrap();
         println!("{:?}", opt);
         assert!(!opt.is_empty());
         let expected = opt.first().unwrap();
         assert_eq!(&"one", &expected.slice);
     }
-    use super::*;
 }

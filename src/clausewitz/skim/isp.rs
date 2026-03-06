@@ -53,7 +53,7 @@ impl<'a, 'b> nom::error::ParseError<&'a str> for ISP<'a, 'b> {
         }
     }
 
-    fn append(input: &str, kind: nom::error::ErrorKind, other: Self) -> Self {
+    fn append(_input: &str, _kind: nom::error::ErrorKind, other: Self) -> Self {
         Self {
             slice: other.slice,
             search_path: other.search_path,
@@ -212,30 +212,12 @@ impl<'a, 'b> InputTakeAtPosition for ISP<'a, 'b> {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use nom::bytes::complete::take_while;
-
-    use crate::clausewitz::skim::SR;
-
-    use super::*;
-    #[test]
-    fn test_name() {
-        let search = ISP::create("asdffdsa", "asdf");
-
-        let x: SR<ISP, ISP> = take_while(|f| f != 'f')(search);
-        println!("{:?}", search);
-        println!("{:?}", x);
-    }
-}
 impl<'a, 'b> ISP<'a, 'b> {
     pub fn create(input: &'a str, search: &'b str) -> Self {
         let mut v = [""; 10];
         let mut vec = search.split('.').collect::<Vec<_>>();
         vec.reverse();
-        for i in 0..vec.len() {
-            v[i] = vec[i]
-        }
+        v[..vec.len()].copy_from_slice(&vec[..]);
         v.reverse();
 
         ISP {
@@ -247,7 +229,7 @@ impl<'a, 'b> ISP<'a, 'b> {
 }
 impl<'a, 'b> Borrow<str> for ISP<'a, 'b> {
     fn borrow(&self) -> &str {
-        self.slice.borrow()
+        self.slice
     }
 }
 impl<'a, 'b> Slice<RangeFrom<usize>> for ISP<'a, 'b> {
@@ -295,5 +277,22 @@ impl<'a, 'b> InputIter for ISP<'a, 'b> {
     #[inline]
     fn slice_index(&self, count: usize) -> Result<usize, Needed> {
         self.slice.slice_index(count)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use nom::bytes::complete::take_while;
+
+    use crate::clausewitz::skim::SR;
+
+    use super::*;
+    #[test]
+    fn test_name() {
+        let search = ISP::create("asdffdsa", "asdf");
+
+        let x: SR<ISP, ISP> = take_while(|f| f != 'f')(search);
+        println!("{:?}", search);
+        println!("{:?}", x);
     }
 }

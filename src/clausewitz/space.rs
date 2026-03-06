@@ -1,11 +1,11 @@
 use super::{simd::take_simd_space, Res};
 use nom::combinator::verify;
 #[inline(always)]
-pub fn opt_space<'a>(input: &'a str) -> Res<&'a str, &'a str> {
+pub fn opt_space(input: &str) -> Res<&str, &str> {
     take_simd_space(input)
 }
 #[inline(always)]
-pub fn req_space<'a>(input: &'a str) -> Res<&'a str, &'a str> {
+pub fn req_space(input: &str) -> Res<&str, &str> {
     verify(opt_space, |spaces: &str| !spaces.is_empty())(input)
 }
 
@@ -14,7 +14,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn opt_space__empty_string__accepted() {
+    fn opt_space_empty_string_accepted() {
         let text = "";
 
         let (remainder, parse_output) = opt_space(text).unwrap();
@@ -23,7 +23,7 @@ mod tests {
     }
 
     #[test]
-    fn opt_space__all_space_chars__accepted() {
+    fn opt_space_all_space_chars_accepted() {
         let text = " \t\n\r";
 
         let (remainder, parse_output) = opt_space(text).unwrap();
@@ -32,13 +32,13 @@ mod tests {
     }
 
     #[test]
-    fn req_space__empty_string__rejected() {
+    fn req_space_empty_string_rejected() {
         let text = "";
         assert!(req_space(text).is_err())
     }
 
     #[test]
-    fn req_space__all_space_chars__accepted() {
+    fn req_space_all_space_chars_accepted() {
         let text = " \t\n\r";
 
         let (remainder, parse_output) = req_space(text).unwrap();

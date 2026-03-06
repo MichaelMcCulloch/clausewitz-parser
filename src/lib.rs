@@ -8,6 +8,8 @@ pub use clausewitz::{
     val::{IndexError, Val},
 };
 
+pub type NumberedDictRef<'a> = (&'a i64, &'a Vec<(&'a str, Val<'a>)>);
+
 pub trait ClausewitzValue<'a> {
     fn get_set_at_path<'b>(&'a self, path: &'b str) -> Result<&'a Vec<Val<'a>>, IndexError>;
     fn get_date_at_path<'b>(&'a self, path: &'b str) -> Result<&'a NaiveDate, IndexError>;
@@ -27,6 +29,6 @@ pub trait ClausewitzValue<'a> {
     fn get_numbered_dict_at_path<'b>(
         &'a self,
         path: &'b str,
-    ) -> Result<(&'a i64, &'a Vec<(&'a str, Val<'a>)>), IndexError>;
+    ) -> Result<NumberedDictRef<'a>, IndexError>;
     fn get_at_path<'b>(&'a self, path: &'b str) -> Result<&'a Val<'a>, IndexError>;
 }

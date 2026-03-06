@@ -11,7 +11,8 @@ fn main() {
     let filename = "C:\\Users\\micha\\Documents\\Paradox Interactive\\Stellaris\\save games\\mptebridhomolog2_-66053362\\gamestate";
 
     let file = File::open(filename).expect("File not found");
-    let mmap = unsafe { Mmap::map(&file).unwrap_or_else(|_| panic!("Error mapping file {:?}", file)) };
+    let mmap =
+        unsafe { Mmap::map(&file).unwrap_or_else(|_| panic!("Error mapping file {:?}", file)) };
 
     let str = String::from_utf8_lossy(&mmap[..]);
 

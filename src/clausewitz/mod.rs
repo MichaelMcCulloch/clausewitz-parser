@@ -1,7 +1,7 @@
 use nom::{error::VerboseError, IResult};
 
 #[cfg(test)]
-pub(self) mod tests;
+mod tests;
 
 #[cfg(all(
     any(target_arch = "x86", target_arch = "x86_64"),
