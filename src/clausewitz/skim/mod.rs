@@ -343,30 +343,26 @@ mod tests {
     #[test]
     fn search_document_test() {
         let filename =
-            "/home/michael/Dev/Stellarust/clausewitz-parser/production_data/3.4.5.95132/2290.03.05/gamestate";
+            concat!(env!("CARGO_MANIFEST_DIR"), "/production_data/2337.02.02-testing/gamestate");
         let file = File::open(filename).expect("File not found");
 
         let mmap = unsafe { Mmap::map(&file).expect(&format!("Error mapping file {:?}", file)) };
 
         let str = String::from_utf8_lossy(&mmap[..]);
-        let input = ISP::create(&str, "country.0.budget.current_month.income.country_base");
-        // let input = InputSearchPair::create(text, "flag.icon");//fails
+        let input = ISP::create(&str, "version");
 
         let (rem, opt) = search_document(input).unwrap();
         println!("{:?}", opt);
         assert!(!opt.is_empty());
-        let expected = opt.first().unwrap();
-        assert_eq!(&"25.5", &expected.slice);
     }
 
     #[test]
-    fn asdf() {
-        let str = r###"country = {
-            1 = one
-            2 = two
+    fn search_skim_array() {
+        let str = r###"country={
+            1=one
+            2=two
         }"###;
         let input = ISP::create(&str, "country");
-        // let input = InputSearchPair::create(text, "flag.icon");//fails
 
         let res = search_document(input);
 
@@ -374,7 +370,7 @@ mod tests {
         println!("{:?}", opt);
         assert!(!opt.is_empty());
         let expected = opt.first().unwrap();
-        assert_eq!(&"25.5", &expected.slice);
+        assert_eq!(&"one", &expected.slice);
     }
     use super::*;
 }

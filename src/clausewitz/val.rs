@@ -261,16 +261,14 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test____() {
+    fn test_parse_country() {
         let s = std::fs::read_to_string(
-            "/home/michael/Dev/Stellarust/stellarust5/production_data/gamestate",
+            concat!(env!("CARGO_MANIFEST_DIR"), "/production_data/2337.02.02-testing/gamestate"),
         )
         .unwrap();
         let gamestate = crate::root(&s).unwrap().1;
-        print!(
-            "{}",
-            serde_json::to_string_pretty(gamestate.get_at_path("country.1").unwrap()).unwrap()
-        )
+        let country = gamestate.get_at_path("country");
+        assert!(country.is_ok());
     }
     #[test]
     fn val_dict__given_key__returns_val_result() {

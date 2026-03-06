@@ -4,23 +4,24 @@ mod file_test {
 
     use clausewitz_parser::root;
     use memmap::Mmap;
-    
 
     #[test]
     fn meta() {
         let text = fs::read_to_string(
-            "/home/michael/Dev/Stellarust/clausewitz-parser/production_data/3.4.5.95132/2230.12.01/meta",
+            concat!(env!("CARGO_MANIFEST_DIR"), "/production_data/2337.02.02-testing/meta"),
         )
         .unwrap();
         let result = root(&text);
 
         assert!(result.is_ok());
+        let r = result.unwrap();
+        assert!(r.0.is_empty(), "Unparsed remainder: {:?}", &r.0[..r.0.len().min(200)]);
     }
 
     #[test]
-    fn gamestate_memmap_par_root__for_epic_files() {
+    fn gamestate_memmap_root__for_epic_files() {
         let filename =
-            "/home/michael/Dev/Stellarust/clausewitz-parser/production_data/3.4.5.95132/2290.03.05/gamestate";
+            concat!(env!("CARGO_MANIFEST_DIR"), "/production_data/2337.02.02-testing/gamestate");
         let file = File::open(filename).expect("File not found");
 
         let mmap = unsafe { Mmap::map(&file).unwrap_or_else(|_| panic!("Error mapping file {:?}", file)) };
@@ -29,9 +30,8 @@ mod file_test {
 
         let result = root(&str);
 
-        assert!(result.is_ok());
-        let r = result.ok().unwrap();
-        println!("{}", r.0.is_empty());
-        // assert!(r.is_empty())
+        assert!(result.is_ok(), "Parse failed: {:?}", result.err());
+        let r = result.unwrap();
+        assert!(r.0.is_empty(), "Unparsed remainder: {:?}", &r.0[..r.0.len().min(200)]);
     }
 }
