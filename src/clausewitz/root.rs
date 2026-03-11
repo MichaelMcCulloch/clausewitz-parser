@@ -10,45 +10,6 @@ pub fn root<'a>(input: &'a str) -> Res<&'a str, Val<'a>> {
     Ok((input, val))
 }
 
-#[inline(always)]
-pub fn cheat_root<'a>(input: &'a str, keys: Vec<&str>) -> Res<&'a str, Val<'a>> {
-    let mut last = 0;
-    let mut indices: Vec<&str> = vec![];
-    // "\n\w+=.*\n" may be a better way to split up the file by top-level keys
-    let regex = Regex::new(r"\n\w+=.*|^version=.*").expect("invalid_regex");
-    for mat in regex.find_iter(input) {
-        if mat.start() == 0 {
-            continue;
-        }
-        let start = mat.start() + 1;
-        if start != last {
-            indices.push(&input[last..start])
-        }
-        last = start;
-    }
-    if last < input.len() {
-        indices.push(&input[last..]);
-    }
-    let res = Val::Dict(
-        indices
-            .iter()
-            .filter(|block| {
-                keys.iter()
-                    .any(|k| block.starts_with(format!("{}=", k).as_str()))
-            })
-            .collect::<Vec<_>>()
-            .par_iter()
-            .filter_map(|string| match root(string) {
-                Ok((_, Val::Dict(dict))) => Some(dict),
-                Ok(_) => None,
-                Err(_) => None,
-            })
-            .flat_map(|v| v)
-            .collect(),
-    );
-    Ok(("", res))
-}
-
 #[cfg(test)]
 mod tests {
     use crate::{clausewitz::tests::helper::assert_result_ok, key_value};
@@ -65,7 +26,7 @@ dict2={
     zoo=ilhjok
 }"###;
 
-        let result = cheat_root(text, vec!["version", "player", "country", "fleet", "ships"]);
+        let result = root(text);
 
         assert_result_ok(result);
     }

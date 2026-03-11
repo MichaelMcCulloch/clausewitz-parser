@@ -4,7 +4,7 @@ use std::{
     time::Instant,
 };
 
-use clausewitz_parser::cheat_root;
+use clausewitz_parser::root;
 use memmap::Mmap;
 
 fn main() {
@@ -22,17 +22,7 @@ fn main() {
     let count = 10;
     for _ in 0..count {
         let start_parse = Instant::now();
-        let _ = cheat_root(
-            &str,
-            vec![
-                "version",
-                "player",
-                "country",
-                "fleet",
-                "ships",
-                "ship_design",
-            ],
-        );
+        let _ = root(&str);
 
         let end_parse = start_parse.elapsed();
 
@@ -48,8 +38,4 @@ fn main() {
         ((size_in_bytes as u128 / avg.as_millis()) * 1000) as f32 / 1000000_f32,
         avg.as_millis()
     );
-
-    // let (s, v) = cheat_root(&str, vec!["country"]).unwrap();
-
-    // println!("{:?}", v)
 }
