@@ -58,11 +58,8 @@ pub fn map_to_date<'a>(s: &'a str) -> anyhow::Result<NaiveDate> {
         })?
         .parse()?;
 
-    //TODO: if the date really matters, find a way to allow leap years, ie feb 29th
-    Ok(match NaiveDate::from_ymd_opt(year, month, day) {
-        Some(date) => date,
-        None => NaiveDate::from_ymd(0, 1, 1),
-    })
+    NaiveDate::from_ymd_opt(year, month, day)
+        .ok_or_else(|| anyhow::anyhow!("Invalid date: {}", s))
 }
 
 #[inline(always)]
